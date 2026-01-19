@@ -1,0 +1,3599 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>上肢功能康复实时量化分析软件</title>
+  <link rel="icon" type="image/png" href="logo1.png">
+  <style>
+    :root {
+      --primary-color: #1976D2;
+      --primary-light: #E3F2FD;
+      --success-color: #047857;
+      --danger-color: #dc2626;
+      --warning-color: #d97706;
+      --text-primary: #111827;
+      --text-secondary: #6b7280;
+      --bg-primary: #ffffff;
+      --bg-secondary: #f9fafb;
+      --border-color: #d1d5db;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      --header-bg: #1f2937;
+      --header-text: #ffffff;
+    }
+    
+    * {
+      box-sizing: border-box;
+    }
+    
+    body {
+      margin: 0;
+      padding: 0;
+      background: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      min-height: 100vh;
+      color: var(--text-primary);
+    }
+    
+    .site-header {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 1rem 0;
+      text-align: center;
+      width: 100%;
+      box-shadow: var(--shadow-md);
+	  display: flex;
+	  align-items: center;
+	  justify-content: center;
+	  gap: 20px;
+    }
+    
+	.site-header h1 {
+	  font-size: 24px;
+	  font-weight: 600;
+	  margin: 0;
+	  display: flex;  /* 保留原有flex，用于emoji和标题的间距 */
+	  align-items: center;
+	  gap: 8px;
+	  /* 移除或注释掉 justify-content: center; 因为现在由父级flex控制 */
+	}
+    
+	#siteLogo {
+	  height: 40px;  
+	  width: auto;  
+	  max-width: 100px;  
+	  border-radius: 4px;  
+	  transition: opacity 0.2s ease;  
+	}
+	
+	#siteLogo:hover {
+	  opacity: 0.8;  
+	}
+	
+    .site-header h1::before {
+    }
+	
+    .page-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      position: relative;
+    }
+    
+    .header {
+      background: var(--bg-primary);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border-color);
+    }
+    
+    .header .time {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .header .time::before {
+      content: "📅";
+    }
+    
+    .canvas-wrapper {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 20px;
+      margin-bottom: 20px;
+      overflow-x: auto;
+      padding-bottom: 10px;  
+    }
+    
+    .container, .container2 {
+      position: relative;
+      background: var(--bg-primary);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+      aspect-ratio: 4/3;
+      border: 1px solid var(--border-color);
+      transition: box-shadow 0.2s ease;
+      flex-shrink: 0;
+    }
+    
+    .container:hover, .container2:hover {
+      box-shadow: var(--shadow-lg);
+    }
+    
+    .canvas-title {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: var(--primary-color);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 10;
+    }
+    
+    #video, #video2, #canvas, #canvas2 {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      transform: scaleX(-1);
+      object-fit: cover;
+    }
+    
+    .debug-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
+      transform: scaleX(-1);
+    }
+    
+    .controls {
+      display: flex;
+      justify-content: space-evenly;
+      gap: 10px;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+    
+    button {
+      padding: 12px 20px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex: 1;
+      min-width: 120px;
+      justify-content: center;
+    }
+    
+    .start-btn {
+      background: var(--success-color);
+      color: white;
+      border-color: var(--success-color);
+    }
+    
+    .start-btn:hover {
+      background: #065f46;
+    }
+    
+    .analyze-btn {
+      background: var(--primary-color);
+      color: white;
+      border-color: var(--primary-color);
+    }
+    
+    .analyze-btn:hover {
+      background: #1e3a8a;
+    }
+    
+    .analyze-btn.active {
+      background: var(--warning-color);
+      border-color: var(--warning-color);
+    }
+    
+    .stop-btn {
+      background: var(--danger-color);
+      color: white;
+      border-color: var(--danger-color);
+    }
+    
+    .stop-btn:hover {
+      background: #b91c1c;
+    }
+    
+    button:disabled {
+      background: var(--text-secondary);
+      color: white;
+      border-color: var(--text-secondary);
+      cursor: not-allowed;
+    }
+    
+    .score-section {
+      background: var(--bg-primary);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border-color);
+    }
+    
+    .score-item {
+      margin-bottom: 20px;
+      background: var(--bg-secondary);
+      border-radius: 6px;
+      padding: 16px;
+      border: 1px solid var(--border-color);
+    }
+    
+    .score-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    
+    .score-title {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .score-value {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--primary-color);
+    }
+    
+    .score-bar {
+      height: 8px;
+      background: var(--border-color);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    
+    .score-fill {
+      height: 100%;
+      background: var(--primary-color);
+      border-radius: 4px;
+      transition: width 0.5s ease;
+    }
+    
+    .advice-section {
+      background: var(--bg-primary);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border-color);
+      border-left: 4px solid var(--primary-color);
+    }
+    
+    .advice-section h3 {
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin: 0 0 12px 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .advice-section h3::before {
+      content: "💡";
+    }
+    
+    .advice-content {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+    
+    .advice-content li {
+      margin: 10px 0;
+      padding-left: 20px;
+      position: relative;
+    }
+    
+    .advice-content li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: var(--success-color);
+      font-weight: bold;
+    }
+    
+    .status {
+      text-align: center;
+      color: var(--text-secondary);
+      margin: 15px 0;
+      font-size: 14px;
+      padding: 10px;
+      background: var(--bg-secondary);
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+    }
+    
+    .tips {
+      background: var(--primary-light);
+      border-left: 4px solid var(--primary-color);
+      padding: 12px;
+      margin: 15px 0;
+      border-radius: 6px;
+      font-size: 14px;
+      color: var(--text-primary);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+    }
+    
+    .progress-container {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 90%;
+      max-width: 400px;
+      background: var(--bg-primary);
+      padding: 24px;
+      border-radius: 8px;
+      box-shadow: var(--shadow-lg);
+      display: none;
+      z-index: 1000;
+      border: 1px solid var(--border-color);
+    }
+    
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: var(--border-color);
+      border-radius: 3px;
+      overflow: hidden;
+      margin: 12px 0;
+    }
+    
+    .progress-fill {
+      width: 0%;
+      height: 100%;
+      background: var(--primary-color);
+      border-radius: 3px;
+      transition: width 0.3s ease;
+    }
+    
+    .progress-text {
+      text-align: center;
+      color: var(--text-primary);
+      font-size: 14px;
+      font-weight: 500;
+      margin-top: 8px;
+    }
+    
+    .fps {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    
+    .mode-switch {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      background: var(--bg-primary);
+      padding: 6px;
+      border-radius: 8px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+    }
+    
+    .mode-button {
+      flex: 1;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    
+    .mode-button.active {
+      background: var(--primary-color);
+      color: white;
+    }
+    
+    .upload-area {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-secondary);
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      border: 2px dashed var(--border-color);
+    }
+    
+    .upload-area:hover {
+      background: var(--primary-light);
+    }
+    
+    .upload-area.hidden {
+      display: none;
+    }
+    
+    .upload-icon {
+      width: 60px;
+      height: 60px;
+      margin-bottom: 15px;
+      color: var(--primary-color);
+    }
+    
+    .upload-text {
+      color: var(--text-primary);
+      font-size: 16px;
+      font-weight: 500;
+      text-align: center;
+      margin-bottom: 6px;
+    }
+    
+    .upload-hint {
+      color: var(--text-secondary);
+      font-size: 12px;
+    }
+    
+    #videoInput {
+      display: none;
+    }
+    
+    .success-toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--bg-primary);
+      color: var(--success-color);
+      padding: 12px 18px;
+      border-radius: 6px;
+      box-shadow: var(--shadow-lg);
+      display: none;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+      z-index: 2000;
+      border: 1px solid var(--success-color);
+    }
+    
+    .success-toast.show {
+      display: flex;
+    }
+    
+    .success-toast::before {
+      content: "✅";
+      font-size: 20px;
+    }
+    
+    .device-dialog {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 90%;
+      max-width: 600px;
+      background: var(--bg-primary);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: var(--shadow-lg);
+      z-index: 1000;
+      max-height: 80vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction:  column;
+      border: 1px solid var(--border-color);
+    }
+    
+    .device-dialog-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .device-dialog-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .device-dialog-close {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: var(--text-secondary);
+      padding: 4px;
+      border-radius: 4px;
+      transition: background-color 0.2s ease;
+    }
+    
+    .device-dialog-close:hover {
+      background: var(--bg-secondary);
+      color: var(--danger-color);
+    }
+    
+    .device-selection-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 15px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    
+    .device-section {
+      background: var(--bg-secondary);
+      border-radius: 6px;
+      padding: 12px;
+      border: 1px solid var(--border-color);
+    }
+    
+    .device-section-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .device-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    
+    .device-item {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 10px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      position: relative;
+    }
+    
+    .device-item:hover {
+      border-color: var(--primary-color);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .device-item.selected {
+      border-color: var(--primary-color);
+      background: var(--primary-light);
+    }
+    
+    .device-item.selected::after {
+      content: "✓";
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      color: var(--primary-color);
+      font-weight: bold;
+    }
+    
+    .device-name {
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 3px;
+    }
+    
+    .device-info {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+    
+    .device-type {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: 500;
+      margin-top: 3px;
+    }
+    
+    .device-type.recommended {
+      background: rgba(4, 120, 87, 0.1);
+      color: var(--success-color);
+    }
+    
+    .device-type.other {
+      background: rgba(107, 114, 128, 0.1);
+      color: var(--text-secondary);
+    }
+    
+    .device-dialog-footer {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-color);
+    }
+    
+    .dialog-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      z-index: 999;
+    }
+
+    .site-footer {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 1rem 0;
+      text-align: center;
+      width: 100%;
+      box-shadow: var(--shadow-md);
+      margin-top: auto;
+    }
+
+    .time {
+      font-size: 14px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .time::before {
+      content: "📅";
+    }
+
+    .time-top {
+      position: fixed;
+      top: 100px;
+      left: 20px;
+      z-index: 100;
+      background: var(--bg-primary);
+      padding: 8px 12px;
+      border-radius: 4px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+    }
+
+    .time-bottom {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      z-index: 100;
+      background: var(--bg-primary);
+      padding: 8px 12px;
+      border-radius: 4px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+    }
+    
+    @media (max-width: 768px) {
+	  .site-header {
+		  justify-content: center;  /* 移动端：logo和标题垂直堆叠或居中 */
+	      gap: 10px;  /* 新增：添加间距 */
+		  }
+		    
+	  #siteLogo {
+		  height: 30px;  /* 移动端缩小logo */
+		  order: -1;  /* 可选：让logo显示在标题前 */
+		  }
+		  
+	  .site-header h1 {
+		  font-size: 20px;  /* 保留原有移动端调整 */
+	    }
+		
+      .page-container {
+        padding: 12px;
+      }
+      
+      /* 更新媒体查询：不强制单列，而是允许滚动保持并排 */
+      .canvas-wrapper {
+        grid-template-columns: repeat(2, minmax(300px, 1fr));  /* 改为2列，但minmax更小，优先并排 */
+        gap: 10px;
+        /* 新增：如果屏幕太窄，启用水平滚动 */
+        overflow-x: auto;
+        justify-content: start;  /* 左对齐，允许滚动 */
+      }
+      
+      .container, .container2 {
+        flex-shrink: 0;  /* 防止容器压缩 */
+        min-width: 300px;  /* 最小宽度，确保不挤压 */
+      }
+      
+      .controls {
+        flex-direction: column;
+      }
+      
+      button {
+        flex: none;
+        width: 100%;
+      }
+      
+      .device-selection-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .site-header h1 {
+        font-size: 20px;
+      }
+
+      .time-top {
+        top: 80px;
+        left: 12px;
+      }
+
+      .time-bottom {
+        bottom: 12px;
+        left: 12px;
+      }
+    }
+	
+    /* 动作面板样式 */
+    .action-btn {
+      width: 100%;
+      padding: 10px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 14px;
+      text-align: left;
+    }
+    .action-btn:hover { background: var(--primary-light); }
+    .action-btn.active { 
+      background: var(--primary-color); 
+      color: white; 
+      border-color: var(--primary-color);
+    }
+    .action-btn.has-data {
+      border-left: 4px solid var(--success-color);
+      background: #f0fdf4;
+    }
+    .action-data {
+      margin-top: 10px;
+      padding: 8px;
+      background: white;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+    }
+    .data-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+    .data-row b { color: var(--text-primary); }
+    .data-row .score-left, .data-row .score-right, .data-row .score-single, .data-row .val-sym {
+      color: var(--success-color);
+      font-weight: normal;
+    }	
+  </style>
+</head>
+<body>
+  <header class="site-header">
+	<img src="logo1.png" alt="Logo" id="siteLogo">
+    <h1>上肢功能康复实时量化分析软件</h1>
+  </header>
+
+  <div class="page-container">
+    <div class="time time-top"></div>
+    
+    <div id="debug" style="font-size: 12px; color: gray; margin: 5px 0; padding: 10px; background: #f5f5f5; border-radius: 4px; display: none;"></div>
+    
+    <div class="mode-switch">
+      <button class="mode-button active" id="cameraMode">
+        📷 摄像头模式
+      </button>
+      <button class="mode-button" id="videoMode">
+        📹 视频上传模式
+      </button>
+    </div>
+    
+    <div class="canvas-wrapper">
+      <div class="container">
+        <span class="canvas-title">主视角</span>
+        <video id="video" playsinline></video>
+        <canvas id="canvas"></canvas>
+        <canvas id="debugCanvas" class="debug-overlay"></canvas>
+        <div class="fps" id="fps">FPS: 0</div>
+        <button id="debugToggle" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.5); color: white; border: none; padding: 5px; border-radius: 4px; font-size: 12px; display: none;">调试</button>
+        
+        <div class="progress-container" id="progressContainer">
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <div class="progress-text" id="progressText">分析中...</div>
+        </div>
+        
+        <div class="upload-area hidden" id="uploadArea">
+          <svg class="upload-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
+          </svg>
+          <div class="upload-text">点击或拖拽文件到此处上传</div>
+          <div class="upload-hint">支持MP4、MOV格式视频，大小不超过200MB</div>
+        </div>
+        <input type="file" id="videoInput" accept="video/mp4,video/quicktime">
+        
+      </div>
+      
+      <div class="container2">
+        <span class="canvas-title">辅助视角</span>
+        <video id="video2" playsinline></video>
+        <canvas id="canvas2"></canvas>
+        <canvas id="debugCanvas2" class="debug-overlay"></canvas>
+        <div class="fps" id="fps2">FPS: 0</div>
+      </div>
+    </div>
+    
+    <div class="controls">
+      <button id="startBtn" class="start-btn">
+        <span>🚀</span> 开始检测
+      </button>
+      <button id="analyzeBtn" class="analyze-btn">
+        <span>📊</span> 开始分析动作
+      </button>
+      <button id="actionTestBtn" class="analyze-btn" style="background-color: #8e44ad; border-color: #8e44ad; color: white;">
+        <span>🏋️</span> 专业动作测试
+      </button>
+      <button id="stopBtn" class="stop-btn">
+        <span>⏹️</span> 停止检测
+      </button>
+      <button id="switchCameraBtn" style="display: none;" class="analyze-btn">
+        <span>🔄</span> 切换摄像头
+      </button>
+      <button id="debugRealSenseBtn" class="analyze-btn">
+        <span>⚙️</span> 设置
+      </button>
+    </div>
+	
+	<div class="tips" id="detectionTips">
+	    请确保上半身在画布中后点击开始检测，如果需分析动作评分，请再点击分析动作，分析动作时请确保左右手臂关键点都有连线后，再运动几秒后点击停止分析即可评出分数。
+	</div>
+    
+    <div class="status" id="status">准备就绪</div>
+    
+    <div class="score-section" id="results" style="display: none;">
+      <div class="score-item">
+        <div class="score-header">
+          <h3 class="score-title">
+            <span>🎯</span> 自由度
+          </h3>
+          <span class="score-value"><span id="freedomScore">0</span>%</span>
+        </div>
+        <div class="score-bar">
+          <div id="freedomBar" class="score-fill" style="width: 0%"></div>
+        </div>
+      </div>
+      
+      <div class="score-item">
+        <div class="score-header">
+          <h3 class="score-title">
+            <span>🔄</span> 灵活度
+          </h3>
+          <span class="score-value"><span id="flexibilityScore">0</span>%</span>
+        </div>
+        <div class="score-bar">
+          <div id="flexibilityBar" class="score-fill" style="width: 0%"></div>
+        </div>
+      </div>
+      
+      <div class="score-item">
+        <div class="score-header">
+          <h3 class="score-title">
+            <span>⚖️</span> 对称度
+          </h3>
+          <span class="score-value"><span id="symmetryScore">0</span>%</span>
+        </div>
+        <div class="score-bar">
+          <div id="symmetryBar" class="score-fill" style="width: 0%"></div>
+        </div>
+      </div>
+      
+      <div class="score-item">
+        <div class="score-header">
+          <h3 class="score-title">
+            <span>🏆</span> 综合评分
+          </h3>
+          <span class="score-value"><span id="accuracyScore">0</span>%</span>
+        </div>
+        <div class="score-bar">
+          <div id="accuracyBar" class="score-fill" style="width: 0%"></div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 【修改】综合动作测试结果面板 -->
+    <div class="score-section" id="actionTestPanel" style="display: none;">
+      <div class="score-header">
+        <h3 class="score-title">
+          <span>🏋️</span> 动作测试数据
+        </h3>
+        <button id="closeActionPanel" style="background:none; border:none; color:var(--text-secondary); cursor:pointer; font-size:20px;">×</button>
+      </div>
+      
+      <!-- 动作按钮网格 -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px;">
+        
+        <!-- 动作1：肩外伸 -->
+        <div class="action-item" id="act_abduction">
+          <button class="action-btn" onclick="startAction('abduction')">🙆 肩外伸</button>
+          <div class="action-data" style="display:none;">
+            <div class="data-row"><span>左:</span> <b class="val-left">0°</b> <span class="score-left">(0分)</span></div>
+            <div class="data-row"><span>右:</span> <b class="val-right">0°</b> <span class="score-right">(0分)</span></div>
+            <div class="data-row"><span>对称:</span> <b class="val-sym">0分</b></div>
+          </div>
+        </div>
+
+        <!-- 动作2：肩前曲 -->
+        <div class="action-item" id="act_forward">
+          <button class="action-btn" onclick="startAction('forward')">➡️ 肩前曲</button>
+          <div class="action-data" style="display:none;">
+            <div class="data-row"><span>左:</span> <b class="val-left">0°</b> <span class="score-left">(0分)</span></div>
+            <div class="data-row"><span>右:</span> <b class="val-right">0°</b> <span class="score-right">(0分)</span></div>
+            <div class="data-row"><span>对称:</span> <b class="val-sym">0分</b></div>
+          </div>
+        </div>
+
+        <!-- 动作3：肩后伸 -->
+        <div class="action-item" id="act_backward">
+          <button class="action-btn" onclick="startAction('backward')">⬅️ 肩后伸</button>
+          <div class="action-data" style="display:none;">
+            <div class="data-row"><span>左:</span> <b class="val-left">0°</b> <span class="score-left">(0分)</span></div>
+            <div class="data-row"><span>右:</span> <b class="val-right">0°</b> <span class="score-right">(0分)</span></div>
+            <div class="data-row"><span>对称:</span> <b class="val-sym">0分</b></div>
+          </div>
+        </div>
+
+        <!-- 动作4：肩外旋 -->
+        <div class="action-item" id="act_external">
+          <button class="action-btn" onclick="startAction('external')">🙋 肩外旋</button>
+          <div class="action-data" style="display:none;">
+            <div class="data-row"><span>左:</span> <b class="val-left">0°</b> <span class="score-left">(0分)</span></div>
+            <div class="data-row"><span>右:</span> <b class="val-right">0°</b> <span class="score-right">(0分)</span></div>
+            <div class="data-row"><span>对称:</span> <b class="val-sym">0分</b></div>
+          </div>
+        </div>
+		
+        <!-- 动作5：肩内旋 -->
+        <div class="action-item" id="act_internal">
+          <button class="action-btn" onclick="startAction('internal')">🙎 肩内旋</button>
+          <div class="action-data" style="display:none;">
+            <div class="data-row"><span>左:</span> <b class="val-left">0°</b> <span class="score-left">(0分)</span></div>
+            <div class="data-row"><span>右:</span> <b class="val-right">0°</b> <span class="score-right">(0分)</span></div>
+            <div class="data-row"><span>对称:</span> <b class="val-sym">0分</b></div>
+          </div>
+        </div>
+
+        <!-- 动作6：肘曲 -->
+        <div class="action-item" id="act_elbow">
+          <button class="action-btn" onclick="startAction('elbow')">💪 肘曲</button>
+          <div class="action-data" style="display:none;">
+            <div class="data-row"><span>左:</span> <b class="val-left">0°</b> <span class="score-left">(0分)</span></div>
+            <div class="data-row"><span>右:</span> <b class="val-right">0°</b> <span class="score-right">(0分)</span></div>
+            <div class="data-row"><span>对称:</span> <b class="val-sym">0分</b></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 综合总分 -->
+      <div style="border-top: 1px solid var(--border-color); padding-top: 15px; margin-top: 10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-weight:bold; font-size:16px;">🏆 综合康复评分</span>
+          <span id="totalScoreDisplay" style="font-size:24px; font-weight:bold; color:var(--primary-color);">0分</span>
+        </div>
+        <div class="score-bar" style="margin-top:5px; height:10px;">
+          <div id="totalScoreBar" class="score-fill" style="width: 0%; background: linear-gradient(90deg, #8e44ad, #1976D2);"></div>
+        </div>
+        <div id="totalScoreDetail" style="font-size:12px; color:var(--text-secondary); margin-top:5px; text-align:right;">
+          (需完成所有动作以计算总分)
+        </div>
+      </div>
+	  
+      <!-- Excel 保存按钮区域 -->
+      <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #d1d5db;">
+        <div style="display: flex; gap: 10px; justify-content: center; align-items: center;">
+          
+          <!-- 按钮1：设置路径 -->
+          <button id="setPathBtn" class="analyze-btn" style="flex: 1; min-width: 140px; background-color: #64748b; border-color: #64748b;">
+            <span>📁</span> <span id="pathBtnText">设置保存路径</span>
+          </button>
+          
+          <!-- 按钮2：保存 -->
+          <button id="saveReportBtn" class="start-btn" style="flex: 1; min-width: 140px;" disabled>
+            <span>📥</span> 保存到 Excel
+          </button>
+        </div>
+        
+        <!-- 提示文字 -->
+        <div id="pathStatus" style="font-size: 12px; color: #6b7280; margin-top: 8px; text-align: center;">
+          当前模式：直接下载 (默认保存到下载文件夹)
+        </div>
+      </div>
+    </div>
+
+    <!--实时角度提示条 -->
+    <div id="liveAngleToast" style="position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:white; padding:10px 20px; border-radius:20px; display:none; z-index:2000; font-size:16px; font-weight:bold;">
+      实时角度: <span id="liveAngleValue">0</span>°
+    </div>
+	
+	
+    <div class="advice-section" id="adviceSection" style="display: none;">
+      <h3>专业建议</h3>
+      <div class="advice-content">
+        <ul id="adviceList">
+          <li>当前动作幅度较小，建议适当加大手臂抬起角度</li>
+          <li>注意保持动作稳定，避免急促运动</li>
+          <li>建议每组做1-2分钟匀速训练</li>
+          <li>如感不适请及时暂停并咨询医生</li>
+        </ul>
+      </div>
+    </div>
+
+
+  </div>
+
+  <footer class="site-footer">
+    版权所有 Copyright 2025
+  </footer>
+
+  <div class="success-toast" id="successToast">
+    检测结果已成功保存！
+  </div>
+
+  <script src="./tfjs/tf.min.js"></script> 
+  <script src="./tfjs/pose-detection.min.js"></script> 
+  
+  <!-- 处理excel文件的读写而导入了sheetJS库 -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+  <script>
+	  
+    // 全局变量
+    let model;
+    let detector;
+    let video;
+    let canvas;
+    let ctx;
+    let debugCanvas;
+    let debugCtx;
+    let isDetecting = false;
+    let lastFpsUpdate = 0;
+    let lastTime = 0;
+    let frameCount = 0;
+    let fps = 0;
+    let currentStream = null;
+    let debugMode = false;
+    let isVideoMode = false;
+    let uploadedVideo = null;
+    let isFrontCamera = true;
+    let isShoulderAbductionMode = false;
+	
+    // 第二个视频和画布的变量
+    let video2;
+    let canvas2;
+    let ctx2;
+    let debugCanvas2;
+    let debugCtx2;
+    let currentStream2 = null;
+    let fps2 = 0;
+    let lastFpsUpdate2 = 0;
+    let lastTime2 = 0;
+    let frameCount2 = 0;
+    
+    let selectedDeviceId1 = null;
+    let selectedDeviceId2 = null;
+    
+    // 关键点平滑处理相关变量
+    const SMOOTHING_FACTOR = 0.7;  // 增强：更高权重，更平滑
+    const MIN_CONFIDENCE = 0.6;    // 增强：更高阈值，减少噪声
+    const BUFFER_SIZE = 3;         // 新增：缓冲区大小
+    let previousKeypoints = null;
+    let keypointBuffers = {};      // 新增：每个关键点的缓冲区
+    let noPoseFrames1 = 0;         // 新增：无姿势帧计数器（画布1）
+    let noPoseFrames2 = 0;         // 新增：无姿势帧计数器（画布2）
+    const RESET_THRESHOLD = 5;    // 修改：降低阈值，更快重置
+    
+    // 手臂动作分析数据
+    let armMovementData = {
+      left: [],
+      right: [],
+      recording: false
+    };
+    
+    // 分析结果
+    let analysisResults = {
+      symmetry: 0,
+      freedom: 0,
+      flexibility: 0
+    };
+
+    // DOM元素
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const statusElem = document.getElementById('status');
+    const fpsElem = document.getElementById('fps');
+    const resultsElem = document.getElementById('results');
+    const adviceSection = document.getElementById('adviceSection');
+    
+    // 设置视频和画布尺寸
+    const VIDEO_WIDTH = 640;
+    const VIDEO_HEIGHT = 480;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const userId = parseInt(urlParams.get('userId')) || 0;
+    const username = urlParams.get('username') || 'unknown';
+    console.log("getuserId",userId)
+    console.log("getusername",username) 
+
+    // 显示成功提示
+    function showSuccessToast(message) {
+      const toast = document.getElementById('successToast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    // 初始化关键点缓冲区
+    function initKeypointBuffers() {
+      const keypointNames = [
+        'nose', 'left_eye', 'right_eye', 'left_ear', 'right_ear',
+        'left_shoulder', 'right_shoulder', 'left_elbow', 'right_elbow',
+        'left_wrist', 'right_wrist', 'left_hip', 'right_hip',
+        'left_knee', 'right_knee', 'left_ankle', 'right_ankle'
+      ];
+      keypointNames.forEach(name => {
+        if (!keypointBuffers[name]) {
+          keypointBuffers[name] = { positions: [], scores: [], missingFrames: 0 };
+        } else {
+          keypointBuffers[name].positions = [];
+          keypointBuffers[name].scores = [];
+          keypointBuffers[name].missingFrames = 0;
+        }
+      });
+    }
+
+    // 初始化函数
+    async function init() {
+      try {
+        // 检查URL参数中是否有debug=true
+        const urlParams = new URLSearchParams(window.location.search);
+        debugMode = urlParams.get('debug') === 'true';
+        
+        // 移除调试按钮的显示逻辑，确保始终隐藏
+        
+        if (debugMode) {
+          document.getElementById('debug').style.display = 'block';
+          console.log('调试模式已启用');
+        }
+        
+        // 检查浏览器兼容性
+        checkBrowserCompatibility();
+        
+        // 获取视频和画布元素
+        video = document.getElementById('video');
+        canvas = document.getElementById('canvas');
+        ctx = canvas.getContext('2d');
+        
+        // 获取调试画布
+        debugCanvas = document.getElementById('debugCanvas');
+        debugCtx = debugCanvas.getContext('2d');
+        
+        // 获取第二个视频和画布元素
+        video2 = document.getElementById('video2');
+        canvas2 = document.getElementById('canvas2');
+        ctx2 = canvas2.getContext('2d');
+        debugCanvas2 = document.getElementById('debugCanvas2');
+        debugCtx2 = debugCanvas2.getContext('2d');
+        
+        // 设置视频和画布尺寸
+        [video, video2].forEach(v => {
+          v.width = VIDEO_WIDTH;
+          v.height = VIDEO_HEIGHT;
+        });
+        [canvas, canvas2].forEach(c => {
+          c.width = VIDEO_WIDTH;
+          c.height = VIDEO_HEIGHT;
+        });
+        [debugCanvas, debugCanvas2].forEach(dc => {
+          dc.width = VIDEO_WIDTH;
+          dc.height = VIDEO_HEIGHT;
+        });
+
+        // 设置样式
+        [video, video2, canvas, canvas2, debugCanvas, debugCanvas2].forEach(el => {
+          el.style.width = '100%';
+          el.style.height = '100%';
+        });
+        
+        // 加载MoveNet模型
+        model = poseDetection.SupportedModels.MoveNet;
+        const modelConfig = {
+          modelType: poseDetection.movenet.modelType.SINGLEPOSE_THUNDER,
+          enableSmoothing: true,
+        };
+        
+        statusElem.textContent = '模型加载中...';
+        detector = await poseDetection.createDetector(model, modelConfig);
+        statusElem.textContent = '模型加载成功！';
+        
+        // 初始化缓冲区
+        initKeypointBuffers();
+        
+        // 设置事件监听
+        startBtn.addEventListener('click', startDetection);
+        stopBtn.addEventListener('click', stopDetection);
+        analyzeBtn.addEventListener('click', toggleArmAnalysis);
+		
+		
+        // 默认禁用停止按钮和分析按钮
+        stopBtn.disabled = true;
+        analyzeBtn.disabled = true;
+        
+        // 添加模式切换监听
+        document.getElementById('cameraMode').addEventListener('click', switchToCamera);
+        document.getElementById('videoMode').addEventListener('click', switchToVideo);
+        
+        // 添加视频上传相关监听
+        const uploadArea = document.getElementById('uploadArea');
+        const videoInput = document.getElementById('videoInput');
+        
+        uploadArea.addEventListener('click', () => videoInput.click());
+        uploadArea.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          uploadArea.style.background = 'var(--primary-light)';
+        });
+        
+        uploadArea.addEventListener('dragleave', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          uploadArea.style.background = 'var(--bg-secondary)';
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          uploadArea.style.background = 'var(--bg-secondary)';
+          
+          const files = e.dataTransfer.files;
+          if (files.length > 0) {
+            handleVideoFile(files[0]);
+          }
+        });
+        
+        videoInput.addEventListener('change', (e) => {
+          if (e.target.files.length > 0) {
+            handleVideoFile(e.target.files[0]);
+          }
+        });
+        
+        // 添加切换摄像头按钮的事件监听
+        const switchCameraBtn = document.getElementById('switchCameraBtn');
+        switchCameraBtn.addEventListener('click', switchCamera);
+        
+        // 检查是否为移动设备，显示切换摄像头按钮
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobile) {
+          switchCameraBtn.style.display = 'block';
+        }
+
+        // 添加RealSense调试按钮的事件监听
+        const debugRealSenseBtn = document.getElementById('debugRealSenseBtn');
+        debugRealSenseBtn.addEventListener('click', showDeviceSelectionDialog);
+        
+      } catch (error) {
+        console.error('初始化失败:', error);
+        statusElem.textContent = '模型加载失败: ' + error.message;
+      }
+      
+      window.addEventListener('resize', () => {
+        setTimeout(updateCanvasSize, 200);
+      });
+    }
+    
+    // ==========================================
+    // 【新系统】专业动作测试逻辑
+    // ==========================================
+    
+    // 全局状态变量
+    let isActionTestMode = false;
+    let currentActionType = null; // 当前正在做的动作: 'abduction', 'forward', etc.
+    
+    // 存储每个动作的最大角度数据
+    const actionData = {
+      abduction: { left: 0, right: 0, sym: 0, done: false, norm: 180 }, // 肩外伸
+      forward:   { left: 0, right: 0, sym: 0, done: false, norm: 180 }, // 肩前曲
+      backward:  { left: 0, right: 0, sym: 0, done: false, norm: 60 },  // 肩后伸 (假设正常60度)
+      external:  { left: 0, right: 0, sym: 0, done: false, norm: 180 }, // 肩外旋
+      internal:  { left: 0, right: 0, sym: 0, done: false, norm: 90 },  // 肩内旋 (假设90度)
+      elbow:     { left: 0, right: 0, sym: 0, done: false, norm: 180 }  // 肘曲
+    };
+
+    // 1. 打开/关闭 整个测试面板
+    function toggleActionTestPanel() {
+      isActionTestMode = !isActionTestMode;
+      const panel = document.getElementById('actionTestPanel');
+      const btn = document.getElementById('actionTestBtn');
+      
+      if (isActionTestMode) {
+        panel.style.display = 'block';
+        btn.innerHTML = '<span>🚫</span> 退出测试';
+        btn.classList.add('active');
+        showSuccessToast('进入专业测试模式，请选择下方动作开始');
+        // 关闭旧的分析模式
+        if (armMovementData.recording) toggleArmAnalysis();
+      } else {
+        panel.style.display = 'none';
+        btn.innerHTML = '<span>🏋️</span> 专业动作测试';
+        btn.classList.remove('active');
+        stopCurrentAction(); // 停止当前正在进行的动作
+      }
+    }
+
+    // 2. 开始某个具体动作
+    window.startAction = function(type) {
+      if (!isActionTestMode) return;
+      
+      // 如果点击的是当前正在做的动作，则停止
+      if (currentActionType === type) {
+        stopCurrentAction();
+        return;
+      }
+      
+      // 停止之前的动作
+      stopCurrentAction();
+      
+      // 开始新动作
+      currentActionType = type;
+      
+      // 更新UI按钮状态
+      document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('active'));
+      const btn = document.querySelector(`#act_${type} .action-btn`);
+      if(btn) btn.classList.add('active');
+      
+      // 显示该动作的数据面板
+      document.querySelectorAll('.action-data').forEach(d => d.style.display = 'none');
+      const dataPanel = document.querySelector(`#act_${type} .action-data`);
+      if(dataPanel) dataPanel.style.display = 'block';
+      
+      // 显示实时角度提示
+      const toast = document.getElementById('liveAngleToast');
+      toast.style.display = 'block';
+      
+      // 根据动作类型给提示
+      let msg = "";
+      if (type === 'abduction') msg = "请正对镜头，双臂侧平举";
+      if (type === 'forward') msg = "【侧身模式】请侧对镜头，抬起手臂向前伸直进行测试";
+      if (type === 'backward') msg = "【侧身模式】请侧对对镜头，抬起手臂向后伸直进行测试";
+      if (type === 'external') msg = "请正对镜头，大臂平举，小臂向上抬";
+      if (type === 'internal') msg = "请正对镜头，大臂平举，小臂向下压";
+      if (type === 'elbow') msg = "请正对镜头，双臂平举并弯曲";
+      
+      document.getElementById('liveAngleValue').textContent = "准备中...";
+      showSuccessToast(`开始测试：${msg}`);
+    };
+
+    // 3. 停止当前动作
+    function stopCurrentAction() {
+      if (!currentActionType) return;
+      
+      // 保存数据
+      saveActionData(currentActionType);
+      
+      // 重置UI
+      const btn = document.querySelector(`#act_${currentActionType} .action-btn`);
+      if(btn) {
+        btn.classList.remove('active');
+        btn.classList.add('has-data'); // 标记已有数据
+      }
+      
+      currentActionType = null;
+      document.getElementById('liveAngleToast').style.display = 'none';
+      
+      // 重新计算总分
+      calculateTotalScore();
+    }
+
+    // 4. 保存数据到对象
+    function saveActionData(type) {
+      const data = actionData[type];
+      data.done = true;
+      
+      // 标记按钮为绿色
+      const btn = document.querySelector(`#act_${type} .action-btn`);
+      if(btn) btn.classList.add('has-data');
+    }
+
+    // 5. 计算总分
+    function calculateTotalScore() {
+      let totalLeft = 0, totalRight = 0, totalSym = 0;
+      let countLeft = 0, countRight = 0, countSym = 0;
+      
+      // 遍历所有动作计算平均分
+      for (let key in actionData) {
+        const d = actionData[key];
+        if (!d.done) continue;
+        
+        if (d.left !== undefined) {
+          totalLeft += (d.left / d.norm * 100); // 左臂得分
+          countLeft++;
+        }
+        if (d.right !== undefined) {
+          totalRight += (d.right / d.norm * 100); // 右臂得分
+          countRight++;
+        }
+        if (d.sym !== undefined) {
+          totalSym += d.sym; // 对称度已经是百分比了
+          countSym++;
+        }
+        if (d.score !== undefined) {
+           // 单臂动作的分数算作左臂也算作右臂（取平均）
+           const s = d.score; 
+           totalLeft += s; totalRight += s;
+           countLeft++; countRight++;
+        }
+      }
+      
+      let finalScore = 0;
+      if (countLeft > 0 || countRight > 0) {
+        const avgLeft = countLeft > 0 ? totalLeft / countLeft : 0;
+        const avgRight = countRight > 0 ? totalRight / countRight : 0;
+        const avgSym = countSym > 0 ? totalSym / countSym : 0;
+        
+        // 综合分 = (左平均 + 右平均 + 对称平均) / 3
+        finalScore = (avgLeft + avgRight + avgSym) / 3;
+      }
+      
+      finalScore = Math.round(finalScore);
+      document.getElementById('totalScoreDisplay').textContent = `${finalScore}分`;
+      document.getElementById('totalScoreBar').style.width = `${finalScore}%`;
+      
+      const detail = `左臂平均: ${countLeft?Math.round(totalLeft/countLeft):0}分 | 右臂平均: ${countRight?Math.round(totalRight/countRight):0}分 | 对称度: ${countSym?Math.round(totalSym/countSym):0}分`;
+      document.getElementById('totalScoreDetail').textContent = detail;
+	  
+	  // 有分数就点亮“保存”按钮
+      const saveBtn = document.getElementById('saveReportBtn');
+      if (saveBtn && (countLeft > 0 || countRight > 0)) {
+        saveBtn.disabled = false;
+      }
+    }
+
+
+    // 6. 实时更新循环 
+    function updateActionSystem(keypoints) {
+      if (!isActionTestMode || !currentActionType) return;
+      
+      const type = currentActionType;
+      let angleL = 0, angleR = 0; // 左臂角度，右臂角度
+      let displayText = ""; // 底部提示条的文字
+
+      // 获取关键点
+      const ls = findKeypoint(keypoints, 'left_shoulder');
+      const rs = findKeypoint(keypoints, 'right_shoulder');
+      const le = findKeypoint(keypoints, 'left_elbow');
+      const re = findKeypoint(keypoints, 'right_elbow');
+      const lw = findKeypoint(keypoints, 'left_wrist');
+      const rw = findKeypoint(keypoints, 'right_wrist');
+      const lhip = findKeypoint(keypoints, 'left_hip');
+      const rhip = findKeypoint(keypoints, 'right_hip');
+
+      // 计算身体中心点 (用于肩外展的身体侧面基准)
+      let centerX = 0, centerY = 0;
+      if (ls && rs && lhip && rhip) {
+        centerX = (ls.x + rs.x + lhip.x + rhip.x) / 4;
+        centerY = (ls.y + rs.y + lhip.y + rhip.y) / 4;
+      }
+
+      // --- 动作 1：肩外展 ---
+      if (type === 'abduction') {
+        if (ls && le && centerX !== 0) {
+          // 左：左髋 -> 左肩 -> 左肘
+          angleL = calculateAngle(ls.x, ls.y, le.x, le.y, lhip.x, lhip.y);
+        }
+        if (rs && re && centerX !== 0) {
+          // 右：右髋 -> 右肩 -> 右肘
+          angleR = calculateAngle(rs.x, rs.y, re.x, re.y, rhip.x, rhip.y);
+        }
+        displayText = `左: ${Math.round(angleL)}° | 右: ${Math.round(angleR)}°`;
+        
+        if(angleL > actionData.abduction.left) actionData.abduction.left = angleL;
+        if(angleR > actionData.abduction.right) actionData.abduction.right = angleR;
+      } 
+      
+      // --- 动作 2：肩前曲 (改回侧身模式 + 区分左右臂) ---
+        else if (type === 'forward') {
+            // 1. 智能识别当前是在测试左臂还是右臂
+            const arm = getBestVisibleArm(ls, le, lw, rs, re, rw, lhip, rhip);
+             if (arm) {
+               // 如果是左侧手 (shoulder name 包含 'left')
+               if (arm.shoulder.name.includes('left')) {
+                 angleL = 180 - calculateAngle(lhip.x, lhip.y, ls.x, ls.y, le.x, le.y);
+                 angleR = 0; // 右臂不参与测试，强制为0
+                 displayText = `左臂: ${Math.round(angleL)}° (右臂未检测)`;
+                 
+                 // 存入数据
+                 if(angleL > actionData.forward.left) actionData.forward.left = angleL;
+                 // 保持 right臂为0或上一次的有效值？
+                 // 这里我们选择让未检测的手臂保持显示为0或不更新最大值
+                 if (actionData.forward.right === 0) actionData.forward.right = 0; 
+               
+               } 
+               // 如果是右侧手
+               else if (arm.shoulder.name.includes('right')) {
+                 angleR = 180 - calculateAngle(rhip.x, rhip.y, rs.x, rs.y, re.x, re.y);
+                 angleL = 0;
+                 displayText = `右臂: ${Math.round(angleR)}° (左臂未检测)`;
+                 
+                 if(angleR > actionData.forward.right) actionData.forward.right = angleR;
+                 if (actionData.forward.left === 0) actionData.forward.left = 0;
+               }
+             }
+           }
+           
+          // --- 动作 3：肩后伸 (改回侧身模式 + 区分左右臂) ---
+          else if (type === 'backward') {
+             // 1. 智能识别当前是在测试左臂还是右臂
+             const arm = getBestVisibleArm(ls, le, lw, rs, re, rw, lhip, rhip);
+             
+             if (arm && arm.shoulder && arm.elbow && arm.hip) {
+               // 计算肩部角度 (髋-肩-肘)
+               const angle = calculateAngle(arm.hip.x, arm.hip.y, arm.shoulder.x, arm.shoulder.y, arm.elbow.x, arm.elbow.y);
+               
+               if (arm.shoulder.name.includes('left')) {
+                 angleL = angle;
+                 angleR = 0;
+                 displayText = `左臂: ${Math.round(angle)}° (右臂未检测)`;
+                 if(angle > actionData.backward.left) actionData.backward.left = angle;
+                 if (actionData.backward.right === 0) actionData.backward.right = 0;
+               } else {
+                 angleR = angle;
+                 angleL = 0;
+                 displayText = `右臂: ${Math.round(angle)}° (左臂未检测)`;
+                 if(angle > actionData.backward.right) actionData.backward.right = angle;
+                 if (actionData.backward.left === 0) actionData.backward.left = 0;
+               }
+             }
+           }
+      
+      // --- 动作 4：肩外旋 (改为正对双臂模式) ---
+      // 逻辑：计算小臂 (肘-腕) 与 绝对水平线的夹角
+      else if (type === 'external') {
+        if (le && lw) {
+          // 计算小臂相对于水平线的角度 (向上为正)
+          const rawAngle = getAngleFromHorizontal(le.x, le.y, lw.x, lw.y);
+          // Math.abs 取绝对值，不管是向上抬还是向下压，都显示偏离度
+          // 如果只想要向上抬的角度，可以去掉 Math.abs，并根据正负判断
+          // 这里假设向上抬是正，所以取绝对值即可
+          angleL = 180 - Math.abs(rawAngle); 
+        }
+        if (re && rw) {
+          const rawAngle = getAngleFromHorizontal(re.x, re.y, rw.x, rw.y);
+          angleR = 180 - Math.abs(rawAngle);
+        }
+        displayText = `左: ${Math.round(angleL)}° | 右: ${Math.round(angleR)}°`;
+        
+        if(angleL > actionData.external.left) actionData.external.left = angleL;
+        if(angleR > actionData.external.right) actionData.external.right = angleR;
+      }
+      
+      // --- 动作 5：肩内旋 (改为正对双臂模式) ---
+      // 逻辑：同肩外旋，计算小臂与水平线夹角
+      else if (type === 'internal') {
+        if (le && lw) {
+          const rawAngle = getAngleFromHorizontal(le.x, le.y, lw.x, lw.y);
+          angleL = 180 - Math.abs(rawAngle);
+        }
+        if (re && rw) {
+          const rawAngle = getAngleFromHorizontal(re.x, re.y, rw.x, rw.y);
+          angleR = 180 - Math.abs(rawAngle);
+        }
+        displayText = `左: ${Math.round(angleL)}° | 右: ${Math.round(angleR)}°`;
+        
+        if(angleL > actionData.internal.left) actionData.internal.left = angleL;
+        if(angleR > actionData.internal.right) actionData.internal.right = angleR;
+      }
+      
+      // --- 动作 6：肘曲 (正对) ---
+      // 逻辑：180 - (肩-肘-腕) 夹角
+      else if (type === 'elbow') {
+        if (ls && le && lw) {
+          const rawL = calculateAngle(ls.x, ls.y, le.x, le.y, lw.x, lw.y);
+          if (rawL > 175) {
+            rawL = 180;
+          }
+          
+          angleL = 180 - rawL - 45;
+        }
+        if (rs && re && rw) {
+          const rawR = calculateAngle(rs.x, rs.y, re.x, re.y, rw.x, rw.y);
+          if (rawR > 175) {
+            rawR = 180;
+          }
+          
+          angleR = 180 - rawR - 45;
+        }
+        displayText = `左: ${Math.round(angleL)}° | 右: ${Math.round(angleR)}°`;
+        
+        if(angleL > actionData.elbow.left) actionData.elbow.left = angleL;
+        if(angleR > actionData.elbow.right) actionData.elbow.right = angleR;
+      }
+
+      // --- 更新UI显示 ---
+      // 更新底部黑色提示条
+      const toastEl = document.getElementById('liveAngleValue');
+      if(toastEl) toastEl.textContent = displayText;
+      
+      // 更新面板数据
+      updateActionPanelUI(type, angleL, angleR);
+    }
+
+    // 辅助函数：获取点相对于垂线的角度 (0度下垂, 180度上举)
+    function getAngleFromVertical(px, py, cx, cy) {
+      const dx = px - cx;
+      const dy = py - cy; 
+      const rad = Math.atan2(dy, dx);
+      let deg = rad * (180 / Math.PI);
+      let result = 90 - deg;
+      if (result < 0) result += 360; // 处理负角度
+      if (result > 180) result = 360 - result; // 归一化到0-180
+      return Math.round(result);
+    }
+
+    // 辅助函数：获取线段相对于水平线的角度
+    function getAngleFromHorizontal(x1, y1, x2, y2) {
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const rad = Math.atan2(dy, dx);
+      return rad * (180 / Math.PI);
+    }
+
+    // 智能识别可见手臂 (配合强制检测模式)
+    function getBestVisibleArm(ls, le, lw, rs, re, rw, lhip, rhip) {
+      // 1. 计算左右手的“可见性得分” (即使置信度低，只要有坐标就算分)
+      let leftScore = (ls ? 1 : 0) + (le ? 1 : 0) + (lw ? 1 : 0);
+      let rightScore = (rs ? 1 : 0) + (re ? 1 : 0) + (rw ? 1 : 0);
+
+      // 2. 判断是否侧身：如果一只手的完整度远高于另一只
+      const isLeftDominant = leftScore > rightScore * 1.5;
+      const isRightDominant = rightScore > leftScore * 1.5;
+
+      // 3. 强制返回优势手
+      if (isLeftDominant && leftScore >= 2) {
+        return { shoulder: ls, elbow: le, wrist: lw, hip: lhip };
+      } else if (isRightDominant && rightScore >= 2) {
+        return { shoulder: rs, elbow: re, wrist: rw, hip: rhip };
+      }
+
+      // 4. 如果不分伯仲，返回完整度较高的
+      if (leftScore >= rightScore && leftScore >= 2) {
+        return { shoulder: ls, elbow: le, wrist: lw, hip: lhip };
+      } else if (rightScore >= 2) {
+        return { shoulder: rs, elbow: re, wrist: rw, hip: rhip };
+      }
+      return null;
+    }
+
+    // 实时更新面板上的数值
+    function updateActionPanelUI(type, val1, val2) {
+      // 更新最大值存储（在 updateActionSystem 中已做，这里只做显示）
+      // 根据不同类型更新DOM
+      if (type === 'abduction') {
+        const d = actionData.abduction;
+        const sym = d.left > 0 ? (Math.min(d.left, d.right) / Math.max(d.left, d.right) * 100) : 0;
+        d.sym = Math.round(sym);
+        
+        updateVal('#act_abduction .val-left', d.left);
+        updateVal('#act_abduction .val-right', d.right);
+        updateScore('#act_abduction .score-left', d.left, 180);
+        updateScore('#act_abduction .score-right', d.right, 180);
+        updateScore('#act_abduction .val-sym', d.sym, 100, false);
+      }
+      else if (type === 'elbow') {
+        const d = actionData.elbow;
+        const sym = d.left > 0 ? (Math.min(d.left, d.right) / Math.max(d.left, d.right) * 100) : 0;
+        d.sym = Math.round(sym);
+        
+        updateVal('#act_elbow .val-left', d.left);
+        updateVal('#act_elbow .val-right', d.right);
+        updateScore('#act_elbow .score-left', d.left, 180);
+        updateScore('#act_elbow .score-right', d.right, 180);
+        updateScore('#act_elbow .val-sym', d.sym, 100, false);
+      }
+      else {
+        const d = actionData[type];
+        
+        // 计算对称度
+        const sym = (d.left > 0 && d.right > 0) ? (Math.min(d.left, d.right) / Math.max(d.left, d.right) * 100) : 0;
+        d.sym = Math.round(sym);
+        
+        // 更新左臂
+        updateVal(`#act_${type} .val-left`, d.left);
+        updateScore(`#act_${type} .score-left`, d.left, d.norm);
+        
+        // 更新右臂
+        updateVal(`#act_${type} .val-right`, d.right);
+        updateScore(`#act_${type} .score-right`, d.right, d.norm);
+        
+        // 更新对称度
+        updateScore(`#act_${type} .val-sym`, d.sym, 100, false);
+      }
+    }
+
+    function updateVal(selector, val) {
+      const el = document.querySelector(selector);
+      if(el) el.textContent = Math.round(val) + '°';
+    }
+    
+    function updateScore(selector, val, max, isPercent=true) {
+      const el = document.querySelector(selector);
+      if(el) {
+        const s = Math.round((val / max) * 100);
+        el.textContent = isPercent ? `(${s}分)` : `${s}分`;
+      }
+    }
+
+    // 初始化事件绑定
+    document.getElementById('actionTestBtn').addEventListener('click', toggleActionTestPanel);
+    document.getElementById('closeActionPanel').addEventListener('click', toggleActionTestPanel);
+    // 绑定 Excel 按钮功能
+    document.getElementById('setPathBtn').addEventListener('click', setSavePath);
+    document.getElementById('saveReportBtn').addEventListener('click', saveToExcel);
+	
+	
+    // 检查浏览器兼容性
+    function checkBrowserCompatibility() {
+      const debugElem = document.getElementById('debug');
+      
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        const msg = '您的浏览器不支持摄像头API，请使用Chrome、Firefox或Edge浏览器';
+        statusElem.textContent = msg;
+        if (debugElem) {
+          debugElem.textContent += msg + '\n';
+        }
+        return false;
+      }
+      
+      return true;
+    }
+    
+    // 自动选择默认设备（新增函数）
+    async function autoSelectDevices() {
+      try {
+        // 先请求摄像头权限以获取设备标签（临时流，立即停止）
+        const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        tempStream.getTracks().forEach(track => track.stop());
+
+        // 获取设备列表
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+
+        // 重置选中ID
+        selectedDeviceId1 = null;
+        selectedDeviceId2 = null;
+
+        // 主视角使用RGB相机
+        for (let device of videoDevices) {
+          const label = device.label.toLowerCase();
+          if (label.includes('intel(r) realsense(tm) depth camera 435i rgb') || label.includes('435i rgb')) {
+            selectedDeviceId1 = device.deviceId;
+            console.log('主视角默认设备已选择:', device.label);
+            break;
+          }
+        }
+
+        // 辅助视角使用深度相机
+        for (let device of videoDevices) {
+          const label = device.label.toLowerCase();
+          if (label.includes('intel(r) realsense(tm) depth camera 435i depth') || label.includes('435i depth')) {
+            selectedDeviceId2 = device.deviceId;
+            console.log('辅助视角默认设备已选择:', device.label);
+            break;
+          }
+        }
+
+        // 如果没有找到特定设备，回退到默认设备（列表第一个）
+        if (!selectedDeviceId1) {
+          if (videoDevices.length > 0) {
+            selectedDeviceId1 = videoDevices[0].deviceId;
+            console.log('主视角回退到默认设备:', videoDevices[0].label);
+          }
+        }
+        if (!selectedDeviceId2 && videoDevices.length > 1) {
+          // 避免与主视角重复
+          for (let device of videoDevices) {
+            if (device.deviceId !== selectedDeviceId1) {
+              selectedDeviceId2 = device.deviceId;
+              console.log('辅助视角回退到默认设备:', device.label);
+              break;
+            }
+          }
+        }
+
+        statusElem.textContent = `默认设备已设置 - 主视角: ${selectedDeviceId1 ? '已选择' : '无'}，辅助视角: ${selectedDeviceId2 ? '已选择' : '无'}`;
+      } catch (error) {
+        console.error('自动选择设备失败:', error);
+        statusElem.textContent = '自动选择设备失败，将使用默认摄像头';
+      }
+    }
+    
+    // 显示设备选择对话框
+    async function showDeviceSelectionDialog() {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+		
+        // 创建遮罩层
+        const overlay = document.createElement('div');
+        overlay.className = 'dialog-overlay';
+        overlay.onclick = () => {
+          document.body.removeChild(overlay);
+          document.body.removeChild(dialog);
+        };
+        
+        // 创建对话框
+        const dialog = document.createElement('div');
+        dialog.className = 'device-dialog';
+        
+        // 对话框头部
+        const header = document.createElement('div');
+        header.className = 'device-dialog-header';
+        
+        const title = document.createElement('div');
+        title.className = 'device-dialog-title';
+        title.innerHTML = '<span>⚙️</span> 摄像头设置';
+        
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'device-dialog-close';
+        closeBtn.innerHTML = '×';
+        closeBtn.onclick = () => {
+          document.body.removeChild(overlay);
+          document.body.removeChild(dialog);
+        };
+        
+        header.appendChild(title);
+        header.appendChild(closeBtn);
+        dialog.appendChild(header);
+        
+        // 设备选择区域
+        const selectionGrid = document.createElement('div');
+        selectionGrid.className = 'device-selection-grid';
+        
+        // 画布1设备选择
+        const canvas1Section = document.createElement('div');
+        canvas1Section.className = 'device-section';
+        
+        const canvas1Title = document.createElement('div');
+        canvas1Title.className = 'device-section-title';
+        canvas1Title.innerHTML = '<span>📹</span> 主视角摄像头';
+        
+        const canvas1List = document.createElement('div');
+        canvas1List.className = 'device-list';
+        
+        // 添加自动选择选项
+        const autoItem1 = createDeviceItem({
+          deviceId: null,
+          label: '自动选择',
+          isRecommended: true
+        }, 'canvas1');
+        canvas1List.appendChild(autoItem1);
+        
+        // 添加实际设备
+        videoDevices.forEach((device, index) => {
+          const deviceInfo = analyzeDevice(device);
+          const deviceItem = createDeviceItem({
+            deviceId: device.deviceId,
+            label: device.label || `摄像头 ${index + 1}`,
+            type: deviceInfo.type,
+            isRecommended: deviceInfo.isRecommended
+          }, 'canvas1');
+          canvas1List.appendChild(deviceItem);
+        });
+        
+        canvas1Section.appendChild(canvas1Title);
+        canvas1Section.appendChild(canvas1List);
+        selectionGrid.appendChild(canvas1Section);
+        
+        // 画布2设备选择
+        const canvas2Section = document.createElement('div');
+        canvas2Section.className = 'device-section';
+        
+        const canvas2Title = document.createElement('div');
+        canvas2Title.className = 'device-section-title';
+        canvas2Title.innerHTML = '<span>📹</span> 辅助视角摄像头';
+        
+        const canvas2List = document.createElement('div');
+        canvas2List.className = 'device-list';
+        
+        // 添加自动选择选项
+        const autoItem2 = createDeviceItem({
+          deviceId: null,
+          label: '自动选择',
+          isRecommended: true
+        }, 'canvas2');
+        canvas2List.appendChild(autoItem2);
+        
+        // 添加实际设备
+        videoDevices.forEach((device, index) => {
+          const deviceInfo = analyzeDevice(device);
+          const deviceItem = createDeviceItem({
+            deviceId: device.deviceId,
+            label: device.label || `摄像头 ${index + 1}`,
+            type: deviceInfo.type,
+            isRecommended: deviceInfo.isRecommended
+          }, 'canvas2');
+          canvas2List.appendChild(deviceItem);
+        });
+        
+        canvas2Section.appendChild(canvas2Title);
+        canvas2Section.appendChild(canvas2List);
+        selectionGrid.appendChild(canvas2Section);
+        
+        dialog.appendChild(selectionGrid);
+        
+        // 对话框底部按钮
+        const footer = document.createElement('div');
+        footer.className = 'device-dialog-footer';
+        
+        const testBtn = document.createElement('button');
+        testBtn.className = 'analyze-btn';
+        testBtn.innerHTML = '<span>🔍</span> 测试';
+        testBtn.onclick = async () => {
+          try {
+            await testSelectedDevices();
+            showSuccessToast('设备测试成功！');
+          } catch (error) {
+            showSuccessToast('设备测试失败：' + error.message);
+          }
+        };
+        
+        const applyBtn = document.createElement('button');
+        applyBtn.className = 'start-btn';
+        applyBtn.innerHTML = '<span>✅</span> 应用';
+        applyBtn.onclick = async () => {
+          try {
+            await applyDeviceSelection();
+            document.body.removeChild(overlay);
+            document.body.removeChild(dialog);
+            showSuccessToast('摄像头设置已应用！');
+          } catch (error) {
+            showSuccessToast('应用失败：' + error.message);
+          }
+        };
+        
+        footer.appendChild(testBtn);
+        footer.appendChild(applyBtn);
+        dialog.appendChild(footer);
+        
+        // 添加到页面
+        document.body.appendChild(overlay);
+        document.body.appendChild(dialog);
+        
+        // 设置当前选中状态
+        updateSelectionState();
+        
+      } catch (error) {
+        console.error('显示设备选择对话框失败:', error);
+        showSuccessToast('获取设备列表失败：' + error.message);
+      }
+    }
+    
+    // 分析设备类型
+    function analyzeDevice(device) {
+      const label = device.label || '';
+      const lowerLabel = label.toLowerCase();
+      
+      let type = '普通摄像头';
+      let isRecommended = false;
+      
+      if (lowerLabel.includes('realsense') || lowerLabel.includes('intel')) {
+        if (lowerLabel.includes('rgb') || lowerLabel.includes('color')) {
+          type = 'RealSense RGB相机';
+          isRecommended = true;
+        } else if (lowerLabel.includes('depth')) {
+          type = 'RealSense 深度相机';
+        } else if (lowerLabel.includes('ir') || lowerLabel.includes('infrared')) {
+          type = 'RealSense 红外相机';
+        } else {
+          type = 'RealSense 相机';
+          isRecommended = true;
+        }
+      }
+      
+      return { type, isRecommended };
+    }
+    
+    // 创建设备项
+    function createDeviceItem(device, canvasId) {
+      const item = document.createElement('div');
+      item.className = 'device-item';
+      item.dataset.deviceId = device.deviceId || '';
+      item.dataset.canvasId = canvasId;
+      
+      const name = document.createElement('div');
+      name.className = 'device-name';
+      name.textContent = device.label;
+      item.appendChild(name);
+      
+      const info = document.createElement('div');
+      info.className = 'device-info';
+      info.textContent = device.deviceId ? `ID: ${device.deviceId.substring(0, 8)}...` : '自动选择最佳摄像头';
+      item.appendChild(info);
+      
+      if (device.type) {
+        const type = document.createElement('div');
+        type.className = `device-type ${device.isRecommended ? 'recommended' : 'other'}`;
+        type.textContent = device.type;
+        item.appendChild(type);
+      }
+      
+      item.addEventListener('click', () => {
+        // 移除同一画布下的其他选中状态
+        const canvasItems = document.querySelectorAll(`.device-item[data-canvas-id="${canvasId}"]`);
+        canvasItems.forEach(i => i.classList.remove('selected'));
+        
+        // 添加选中状态
+        item.classList.add('selected');
+        
+        // 保存选择
+        if (canvasId === 'canvas1') {
+          window.tempDeviceId1 = device.deviceId;
+        } else {
+          window.tempDeviceId2 = device.deviceId;
+        }
+      });
+      
+      return item;
+    }
+    
+    // 更新选中状态
+    function updateSelectionState() {
+      const canvas1Items = document.querySelectorAll('.device-item[data-canvas-id="canvas1"]');
+      const canvas2Items = document.querySelectorAll('.device-item[data-canvas-id="canvas2"]');
+      
+      // 设置画布1选中状态
+      canvas1Items.forEach(item => {
+        if (item.dataset.deviceId === (selectedDeviceId1 || '')) {
+          item.classList.add('selected');
+          window.tempDeviceId1 = selectedDeviceId1;
+        }
+      });
+      
+      // 设置画布2选中状态
+      canvas2Items.forEach(item => {
+        if (item.dataset.deviceId === (selectedDeviceId2 || '')) {
+          item.classList.add('selected');
+          window.tempDeviceId2 = selectedDeviceId2;
+        }
+      });
+    }
+    
+    // 测试选中的设备
+    async function testSelectedDevices() {
+      const deviceId1 = window.tempDeviceId1;
+      const deviceId2 = window.tempDeviceId2;
+      
+      // 测试画布1设备
+      if (deviceId1) {
+        const testStream1 = await navigator.mediaDevices.getUserMedia({
+          video: { deviceId: { exact: deviceId1 } }
+        });
+        testStream1.getTracks().forEach(track => track.stop());
+      }
+      
+      // 测试画布2设备
+      if (deviceId2 && deviceId2 !== deviceId1) {
+        const testStream2 = await navigator.mediaDevices.getUserMedia({
+          video: { deviceId: { exact: deviceId2 } }
+        });
+        testStream2.getTracks().forEach(track => track.stop());
+      }
+    }
+    
+    // 应用设备选择
+    async function applyDeviceSelection() {
+      selectedDeviceId1 = window.tempDeviceId1;
+      selectedDeviceId2 = window.tempDeviceId2;
+      
+      // 如果正在检测，需要重新启动
+      const wasDetecting = isDetecting;
+      if (wasDetecting) {
+        stopDetection();
+      }
+      
+      // 设置新的摄像头
+      await setupCameras();
+      
+      if (wasDetecting) {
+        startDetection();
+      }
+    }
+    
+    // 开始检测
+    async function startDetection() {
+      if (isDetecting) return;
+      
+      try {
+        statusElem.textContent = isVideoMode ? '准备处理视频...' : '正在连接摄像头...';
+        
+        if (!isVideoMode) {
+          // 如果未设置设备ID，则自动选择默认设备（新增逻辑）
+          if (!selectedDeviceId1 || !selectedDeviceId2) {
+            await autoSelectDevices();
+          }
+          // 设置两个摄像头
+          await setupCameras();
+        }
+        
+        // 确保视频播放
+        await video.play();
+        if (!isVideoMode) {
+          await video2.play();
+        }
+        console.log('视频播放成功');
+        
+        updateCanvasSize();
+        setTimeout(updateCanvasSize, 500);
+        
+        isDetecting = true;
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        analyzeBtn.disabled = false;
+        statusElem.textContent = '正在进行姿态检测...';
+        
+        // 隐藏提示信息
+        document.getElementById('detectionTips').style.display = 'none';
+        
+        // 重置数据
+        armMovementData = {
+          left: [],
+          right: [],
+          recording: false
+        };
+        noPoseFrames1 = 0;
+        noPoseFrames2 = 0;
+        previousKeypoints = null;
+        initKeypointBuffers();
+        
+        // 开始检测循环
+        requestAnimationFrame(detectPose1);
+        if (!isVideoMode) {
+          requestAnimationFrame(detectPose2);
+        }
+        
+      } catch (error) {
+        console.error('启动检测失败:', error);
+        handleDetectionError(error);
+      }
+    }
+    
+    // 处理检测错误
+    function handleDetectionError(error) {
+      let errorMessage = '启动检测失败';
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        errorMessage = isVideoMode ? '无法访问视频文件' : '摄像头访问被拒绝，请在浏览器设置中允许摄像头权限';
+      } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+        errorMessage = isVideoMode ? '视频文件无法读取' : '未找到摄像头设备，请检查连接';
+      } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+        errorMessage = isVideoMode ? '视频文件损坏或无法读取' : '摄像头正被其他程序占用';
+      } else if (error.message) {
+        errorMessage += ': ' + error.message;
+      }
+      
+      statusElem.textContent = errorMessage;
+      
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+        currentStream = null;
+      }
+      if (currentStream2) {
+        currentStream2.getTracks().forEach(track => track.stop());
+        currentStream2 = null;
+      }
+    }
+    
+    // 停止检测
+    function stopDetection() {
+      if (!isDetecting) return;
+      
+      // 如果正在记录动作数据，先分析数据
+      if (armMovementData.recording) {
+        analyzeArmMovements();
+      }
+      
+      // 停止所有视频流轨道
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+        currentStream = null;
+      }
+      if (currentStream2) {
+        currentStream2.getTracks().forEach(track => track.stop());
+        currentStream2 = null;
+      }
+
+      if (isVideoMode && uploadedVideo) {
+        uploadedVideo.pause();
+        document.getElementById('uploadArea').classList.remove('hidden');
+      }
+      
+      isDetecting = false;
+      armMovementData.left = [];
+      armMovementData.right = [];
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+      analyzeBtn.disabled = true;
+      statusElem.textContent = '检测已停止';
+      
+      // 清除画布
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx2.clearRect(0, 0, canvas2.width, canvas2.height);
+      if (debugCtx) {
+        debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
+      }
+      if (debugCtx2) {
+        debugCtx2.clearRect(0, 0, debugCanvas2.width, debugCanvas2.height);
+      }
+    }
+    
+    // 切换手臂动作分析
+    function toggleArmAnalysis() {
+      if (!isDetecting) return;
+      
+      if (!armMovementData.recording) {
+        armMovementData.left = [];
+        armMovementData.right = [];
+        armMovementData.recording = true;
+        armMovementData.hasEnoughData = false;
+        analyzeBtn.textContent = '停止分析动作';
+        statusElem.textContent = '正在记录手臂动作数据...';
+      } else {
+        if (!armMovementData.hasEnoughData) {
+          statusElem.textContent = '数据不足，请继续运动几秒钟...';
+          return;
+        }
+        
+        armMovementData.recording = false;
+        analyzeBtn.textContent = '开始分析动作';
+        analyzeArmMovements();
+      }
+    }
+    
+    // 分析手臂动作
+    function analyzeArmMovements() {
+      if (armMovementData.left.length < 10 || armMovementData.right.length < 10) {
+        statusElem.textContent = '数据不足，请再次尝试并多活动几秒钟';
+        return;
+      }
+      
+      const progressContainer = document.getElementById('progressContainer');
+      const progressFill = document.getElementById('progressFill');
+      const progressText = document.getElementById('progressText');
+      progressContainer.style.display = 'block';
+      
+      let progress = 0;
+      const duration = 1000;
+      const interval = 30;
+      const steps = duration / interval;
+      const increment = 100 / steps;
+      
+      const progressInterval = setInterval(() => {
+        progress += increment;
+        if (progress >= 100) {
+          progress = 100;
+          clearInterval(progressInterval);
+          
+          analysisResults.symmetry = calculateSymmetryScore();
+          analysisResults.freedom = calculateFreedomScore();
+          analysisResults.flexibility = calculateFlexibilityScore();
+          
+          setTimeout(() => {
+            progressContainer.style.display = 'none';
+            progressFill.style.width = '0%';
+            
+            displayAnalysisResults();
+            armMovementData.left = [];
+            armMovementData.right = [];
+            
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            analyzeBtn.classList.add('active');
+            
+            statusElem.textContent = '分析完成！正在保存结果...';
+            
+            setTimeout(() => {
+              analyzeBtn.classList.remove('active');
+            }, 3000);
+          }, 200);
+        }
+        
+        progressFill.style.width = `${progress}%`;
+        progressText.textContent = `分析中... ${Math.round(progress)}%`;
+      }, interval);
+    }
+    
+    // 计算对称性评分
+    function calculateSymmetryScore() {
+      let totalAngleDifference = 0;
+      const minSamples = Math.min(armMovementData.left.length, armMovementData.right.length);
+      
+      for (let i = 0; i < minSamples; i++) {
+        const leftAngle = armMovementData.left[i].angle;
+        const rightAngle = armMovementData.right[i].angle;
+        const angleDiff = Math.abs(leftAngle - rightAngle);
+        totalAngleDifference += angleDiff;
+      }
+      
+      const avgAngleDifference = totalAngleDifference / minSamples;
+      let score = 10 - (avgAngleDifference / 30) * 10;
+      return Math.max(0, Math.min(10, score)).toFixed(1);
+    }
+    
+    // 计算自由度评分
+    function calculateFreedomScore() {
+      const leftAngles = armMovementData.left.map(data => data.angle);
+      const rightAngles = armMovementData.right.map(data => data.angle);
+
+      const leftRange = Math.max(...leftAngles) - Math.min(...leftAngles);
+      const rightRange = Math.max(...rightAngles) - Math.min(...rightAngles);
+      const avgRange = (leftRange + rightRange) / 2;
+
+      let leftDirectionChanges = 0;
+      let rightDirectionChanges = 0;
+
+      for (let i = 1; i < leftAngles.length; i++) {
+        if ((leftAngles[i] - leftAngles[i-1]) * (leftAngles[i-1] - (leftAngles[i-2] || leftAngles[i-1])) < 0) {
+          leftDirectionChanges++;
+        }
+      }
+      for (let i = 1; i < rightAngles.length; i++) {
+        if ((rightAngles[i] - rightAngles[i-1]) * (rightAngles[i-1] - (rightAngles[i-2] || rightAngles[i-1])) < 0) {
+          rightDirectionChanges++;
+        }
+      }
+
+      const avgDirectionChanges = (leftDirectionChanges + rightDirectionChanges) / 2;
+      const rangeScore = Math.min(avgRange / 120, 1) * 6;
+      const directionScore = Math.min(avgDirectionChanges / 10, 1) * 4;
+
+      const leftZRange = Math.max(...armMovementData.left.map(d => d.shoulderPos.z)) -
+                         Math.min(...armMovementData.left.map(d => d.shoulderPos.z));
+      const rightZRange = Math.max(...armMovementData.right.map(d => d.shoulderPos.z)) -
+                          Math.min(...armMovementData.right.map(d => d.shoulderPos.z));
+      const avgZRange = (leftZRange + rightZRange) / 2;
+      const zScore = Math.min(avgZRange / 500, 1) * 2;
+
+      const totalScore = rangeScore + directionScore + zScore;
+      return Math.max(0, Math.min(10, totalScore)).toFixed(1);
+    }
+    
+    // 计算灵活度评分
+    function calculateFlexibilityScore() {
+      const leftMaxAngle = Math.max(...armMovementData.left.map(data => data.angle));
+      const rightMaxAngle = Math.max(...armMovementData.right.map(data => data.angle));
+      const avgMaxAngle = (leftMaxAngle + rightMaxAngle) / 2;
+      
+      let leftMaxSpeed = 0;
+      let rightMaxSpeed = 0;
+      
+      for (let i = 1; i < armMovementData.left.length; i++) {
+        const speed = Math.abs(armMovementData.left[i].angle - armMovementData.left[i-1].angle);
+        if (speed > leftMaxSpeed) leftMaxSpeed = speed;
+      }
+      
+      for (let i = 1; i < armMovementData.right.length; i++) {
+        const speed = Math.abs(armMovementData.right[i].angle - armMovementData.right[i-1].angle);
+        if (speed > rightMaxSpeed) rightMaxSpeed = speed;
+      }
+      
+      const avgSpeed = (leftMaxSpeed + rightMaxSpeed) / 2;
+      
+      const angleScore = Math.min(avgMaxAngle / 180, 1) * 6;
+      const speedScore = Math.min(avgSpeed / 10, 1) * 4;
+      
+      const totalScore = angleScore + speedScore;
+      
+      return Math.max(0, Math.min(10, totalScore)).toFixed(1);
+    }
+    
+    // 更新评分显示
+    function displayAnalysisResults() {
+      const symmetryPercent = Math.round(analysisResults.symmetry * 10);
+      const freedomPercent = Math.round(analysisResults.freedom * 10);
+      const flexibilityPercent = Math.round(analysisResults.flexibility * 10);
+      const accuracyPercent = Math.round((symmetryPercent + freedomPercent + flexibilityPercent) / 3);
+      
+      document.getElementById('symmetryScore').textContent = symmetryPercent;
+      document.getElementById('freedomScore').textContent = freedomPercent;
+      document.getElementById('flexibilityScore').textContent = flexibilityPercent;
+      document.getElementById('accuracyScore').textContent = accuracyPercent;
+      
+      document.getElementById('symmetryBar').style.width = `${symmetryPercent}%`;
+      document.getElementById('freedomBar').style.width = `${freedomPercent}%`;
+      document.getElementById('flexibilityBar').style.width = `${flexibilityPercent}%`;
+      document.getElementById('accuracyBar').style.width = `${accuracyPercent}%`;
+      
+      updateAdvice(symmetryPercent, freedomPercent, flexibilityPercent);
+      
+      resultsElem.style.display = 'block';
+      adviceSection.style.display = 'block';
+      
+      sendDataToUniApp(symmetryPercent, freedomPercent, flexibilityPercent, accuracyPercent);
+    }
+    
+    // 向uni-app发送数据并上传到后端数据库
+    function sendDataToUniApp(symmetryDegree, freedomDegree, flexibilityDegree, accuracyPercent) {
+      try {
+        const now = new Date();
+        const time = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ` +
+                 `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+    
+        const detectionData = {
+          type: 'detection_data',
+          data: {
+            userId: userId,
+            username: username,
+            symmetryDegree: symmetryDegree,
+            freedomDegree: freedomDegree,
+            flexibilityDegree: flexibilityDegree,
+            accuracyPercent: accuracyPercent,
+            time: time
+          }
+        };
+        
+        console.log('准备发送数据:', detectionData);
+        
+        // 直接上传到后端数据库
+        fetch('http://118.31.184.33:8080/user/insertHistory ', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(detectionData.data)
+        })
+        .then(response => {
+          if (response.ok) {
+            return response.json();
+          }
+          throw new Error('网络响应异常');
+        })
+        .then(data => {
+          console.log('数据保存成功:', data);
+          showSuccessToast('检测结果已成功保存！');
+          
+          window.parent.postMessage({
+            data: [detectionData]
+          }, '*');
+          console.log('数据已发送到uni-app');
+        })
+        .catch(error => {
+          console.error('保存数据失败:', error);
+          showSuccessToast('保存失败，请重试');
+        });
+      }
+      catch (error) {
+        console.error('发送数据时出错:', error);
+        showSuccessToast('操作失败，请重试');
+      }
+    }
+    
+    // ==========================================
+    // 下面是新增的 Excel 保存功能代码
+    // ==========================================
+    
+    // 用来存放文件位置的变量
+    let fileHandle = null;
+    let directoryHandle = null;
+    let isFileSystemMode = false;
+
+    // 功能1：点击“设置保存路径”时运行
+    async function setSavePath() {
+      // 检查浏览器是不是支持这个高级功能
+      if (!window.showDirectoryPicker && !window.showSaveFilePicker) {
+        alert('您的浏览器不支持高级保存，将直接下载文件。\n(建议使用电脑版 Chrome 或 Edge)');
+        return;
+      }
+
+      try {
+        // 询问用户是想选个文件，还是选个文件夹
+        const choice = confirm("点击【确定】选择一个已有的 Excel 文件进行追加。\n点击【取消】选择一个文件夹，自动更新表格。");
+        
+        if (choice) {
+          // 选择已有文件
+          const options = {
+            types: [{
+              description: 'Excel Files',
+              accept: {'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']},
+            }],
+          };
+          fileHandle = await window.showSaveFilePicker(options);
+          directoryHandle = null; 
+        } else {
+          // 选择文件夹
+          directoryHandle = await window.showDirectoryPicker();
+          fileHandle = null; 
+        }
+
+        isFileSystemMode = true;
+        updatePathStatusUI(true);
+        showSuccessToast('路径设置成功！');
+
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error(err);
+          alert('无法访问该路径，请重试。');
+        }
+      }
+    }
+
+    // 功能2：更新界面上的提示文字
+    function updatePathStatusUI(isSet) {
+      const statusDiv = document.getElementById('pathStatus');
+      const btnText = document.getElementById('pathBtnText');
+      
+      if (isSet) {
+        if (fileHandle) {
+          statusDiv.textContent = `当前模式：追加到文件 - ${fileHandle.name}`;
+          btnText.textContent = "更换文件";
+        } else if (directoryHandle) {
+          statusDiv.textContent = `当前模式：文件夹模式 - 自动更新表格`;
+          btnText.textContent = "更换文件夹";
+        }
+      } else {
+        statusDiv.textContent = `当前模式：直接下载 (默认保存到下载文件夹)`;
+        btnText.textContent = "设置保存路径";
+      }
+    }
+
+    // 点击“保存到 Excel”时运行
+    async function saveToExcel() {
+      // 1. 检查有没有数据
+      const actionsDone = Object.values(actionData).filter(d => d.done).length;
+      if (actionsDone === 0) {
+        showSuccessToast('暂无测试数据，请先做几个动作');
+        return;
+      }
+
+      // 2. 准备要保存的数据
+      const now = new Date();
+      const timeStr = now.toLocaleString('zh-CN', { hour12: false }); // 获取当前时间
+      
+      // 获取总分
+      const totalScoreText = document.getElementById('totalScoreDisplay').textContent;
+      const totalScore = parseInt(totalScoreText.replace('分', '')) || 0;
+      
+      // 获取左臂、右臂、对称度分数
+      const detailText = document.getElementById('totalScoreDetail').textContent;
+      let avgLeft = 0, avgRight = 0, avgSym = 0;
+      const parts = detailText.split('|');
+      parts.forEach(part => {
+        if (part.includes('左臂平均')) avgLeft = parseInt(part.match(/\d+/)[0]) || 0;
+        if (part.includes('右臂平均')) avgRight = parseInt(part.match(/\d+/)[0]) || 0;
+        if (part.includes('对称度')) avgSym = parseInt(part.match(/\d+/)[0]) || 0;
+      });
+
+      // 把数据整理成一行
+      const rowData = {
+        "记录时间": timeStr,
+        "综合康复评分": totalScore,
+        "左臂平均分": avgLeft,
+        "右臂平均分": avgRight,
+        "对称度平均分": avgSym,
+        
+        "肩外伸-左(°)": actionData.abduction.done ? Math.round(actionData.abduction.left) : '',
+        "肩外伸-右(°)": actionData.abduction.done ? Math.round(actionData.abduction.right) : '',
+        "肩外伸-对称分": actionData.abduction.done ? actionData.abduction.sym : '',
+        
+        "肩前曲-左(°)": actionData.forward.done ? Math.round(actionData.forward.left) : '',
+        "肩前曲-右(°)": actionData.forward.done ? Math.round(actionData.forward.right) : '',
+        "肩前曲-对称分": actionData.forward.done ? actionData.forward.sym : '',
+        
+        "肩后伸-左(°)": actionData.backward.done ? Math.round(actionData.backward.left) : '',
+        "肩后伸-右(°)": actionData.backward.done ? Math.round(actionData.backward.right) : '',
+        "肩后伸-对称分": actionData.backward.done ? actionData.backward.sym : '',
+        
+        "肩外旋-左(°)": actionData.external.done ? Math.round(actionData.external.left) : '',
+        "肩外旋-右(°)": actionData.external.done ? Math.round(actionData.external.right) : '',
+        "肩外旋-对称分": actionData.external.done ? actionData.external.sym : '',
+        
+        "肩内旋-左(°)": actionData.internal.done ? Math.round(actionData.internal.left) : '',
+        "肩内旋-右(°)": actionData.internal.done ? Math.round(actionData.internal.right) : '',
+        "肩内旋-对称分": actionData.internal.done ? actionData.internal.sym : '',
+        
+        "肘曲-左(°)": actionData.elbow.done ? Math.round(actionData.elbow.left) : '',
+        "肘曲-右(°)": actionData.elbow.done ? Math.round(actionData.elbow.right) : '',
+        "肘曲-对称分": actionData.elbow.done ? actionData.elbow.sym : ''
+      };
+
+      const btn = document.getElementById('saveReportBtn');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<span>⏳</span> 处理中...';
+      btn.disabled = true;
+
+      try {
+        let workbook;
+        
+        // --- 模式 A：文件追加数据 ---
+        if (isFileSystemMode) {
+          
+          // 如果选的是文件夹，就去找那个文件
+          if (directoryHandle) {
+            const fileName = '康复训练记录.xlsx';
+            fileHandle = await directoryHandle.getFileHandle(fileName, { create: true });
+          }
+          
+          // 读取文件里的旧数据
+          const fileData = await fileHandle.getFile();
+          const arrayBuffer = await fileData.arrayBuffer();
+          workbook = XLSX.read(arrayBuffer, { type: 'array' });
+          
+          // 把新数据加进去
+          const firstSheetName = workbook.SheetNames[0];
+          const existingData = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName]);
+          existingData.push(rowData);
+          
+          // 重新生成表格
+          const newWorksheet = XLSX.utils.json_to_sheet(existingData);
+          workbook.Sheets[firstSheetName] = newWorksheet;
+          
+          // 写回文件
+          const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+          const writable = await fileHandle.createWritable();
+          await writable.write(excelBuffer);
+          await writable.close();
+          
+          showSuccessToast('数据已成功保存！');
+        } 
+        
+        // --- 直接下载新文件 ---
+        else {
+          workbook = XLSX.utils.book_new();
+          const worksheet = XLSX.utils.json_to_sheet([rowData]);
+          XLSX.utils.book_append_sheet(workbook, worksheet, "康复数据");
+          
+          const dateStr = now.toISOString().slice(0,10);
+          XLSX.writeFile(workbook, `康复训练记录_${dateStr}.xlsx`);
+          
+          showSuccessToast('Excel 已开始下载');
+        }
+
+      } catch (error) {
+        console.error('保存失败:', error);
+        if (isFileSystemMode) {
+          alert('写入失败，已切换为下载模式。');
+          isFileSystemMode = false;
+          updatePathStatusUI(false);
+        } else {
+          alert('保存失败: ' + error.message);
+        }
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+	
+    // 更新建议内容
+    function updateAdvice(symmetry, freedom, flexibility) {
+      let advice = [];
+      
+      if (symmetry < 60) {
+        advice.push('左右手臂动作不够对称，建议注意保持平衡');
+      }
+      
+      if (freedom < 70) {
+        advice.push('当前动作幅度较小，建议适当加大手臂抬起角度');
+      }
+      
+      if (flexibility < 70) {
+        advice.push('动作灵活度不足，建议增加练习频率');
+      }
+      
+      advice.push('建议每组做1-2分钟匀速训练');
+      advice.push('如感不适请及时暂停并咨询医生');
+      
+      const adviceList = document.getElementById('adviceList');
+      adviceList.innerHTML = advice.map(item => `<li>${item}</li>`).join('');
+    }
+    
+    // 更新时间显示
+    function updateCurrentTime() {
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('zh-CN', { 
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+        weekday: 'long'
+      });
+      const timeStr = now.toLocaleTimeString('zh-CN', { 
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      const timeText = `${dateStr} ${timeStr}`;
+      document.querySelectorAll('.time').forEach(el => {
+        el.textContent = timeText;
+      });
+    }
+    
+    // 初始化时添加时间更新
+    window.addEventListener('DOMContentLoaded', () => {
+      init();
+      updateCurrentTime();
+      setInterval(updateCurrentTime, 60000);
+    });
+    
+    // 姿态检测循环 (画布1) - 修复：始终重绘视频
+    async function detectPose1(timestamp) {
+      if (!isDetecting) return;
+      
+      const now = performance.now();
+      frameCount++;
+      if (now - lastFpsUpdate >= 1000) {
+        fps = Math.round((frameCount * 1000) / (now - lastFpsUpdate));
+        fpsElem.textContent = `FPS: ${fps}`;
+        frameCount = 0;
+        lastFpsUpdate = now;
+      }
+      
+      try {
+        // 始终清空画布并重绘视频（关键修复：防止残留）
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        const poses = await detector.estimatePoses(video);
+        
+        if (poses.length > 0) {
+          let smoothedKeypoints = smoothKeypoints(poses[0].keypoints);
+          drawSkeletonOnVideo([{ keypoints: smoothedKeypoints }], ctx, debugCtx, canvas, debugCanvas, video);
+          
+          // 【修改】调用新的动作测试系统
+          updateActionSystem(smoothedKeypoints);
+		  
+          if (armMovementData.recording) {
+            collectArmData(smoothedKeypoints);
+          }
+          noPoseFrames1 = 0;  // 重置计数器
+        } else {
+          noPoseFrames1++;
+          if (noPoseFrames1 >= RESET_THRESHOLD) {
+            previousKeypoints = null;
+            initKeypointBuffers();  // 重置缓冲
+            noPoseFrames1 = 0;
+            console.log('长时间无姿势，重置平滑缓冲');
+          }
+        }
+        
+      } catch (error) {
+        console.error('检测过程出错 (画布1):', error);
+      }
+      
+      requestAnimationFrame(detectPose1);
+    }
+    
+    // 姿态检测循环 (画布2) - 修复：始终重绘视频
+    async function detectPose2(timestamp) {
+      if (!isDetecting) return;
+      
+      const now = performance.now();
+      frameCount2++;
+      if (now - lastFpsUpdate2 >= 1000) {
+        fps2 = Math.round((frameCount2 * 1000) / (now - lastFpsUpdate2));
+        document.getElementById('fps2').textContent = `FPS: ${fps2}`;
+        frameCount2 = 0;
+        lastFpsUpdate2 = now;
+      }
+      
+      try {
+        // 始终清空画布并重绘视频（关键修复：防止残留）
+        ctx2.clearRect(0, 0, canvas2.width, canvas2.height);
+        ctx2.drawImage(video2, 0, 0, canvas2.width, canvas2.height);
+        
+        const poses = await detector.estimatePoses(video2);
+        
+        if (poses.length > 0) {
+          const smoothedKeypoints = smoothKeypoints(poses[0].keypoints);
+          drawSkeletonOnVideo([{ keypoints: smoothedKeypoints }], ctx2, debugCtx2, canvas2, debugCanvas2, video2);
+          noPoseFrames2 = 0;  // 重置计数器
+        } else {
+          noPoseFrames2++;
+          if (noPoseFrames2 >= RESET_THRESHOLD) {
+            noPoseFrames2 = 0;
+          }
+        }
+        
+      } catch (error) {
+        console.error('检测过程出错 (画布2):', error);
+      }
+      
+      requestAnimationFrame(detectPose2);
+    }
+    
+    // 增强平滑处理关键点 - 解决闪烁问题
+    function smoothKeypoints(keypoints) {
+      // 如果是第一帧，没有上一帧的数据，先初始化
+      if (!previousKeypoints) {
+        previousKeypoints = keypoints.map(kp => ({ ...kp })); // 深拷贝当前关键点
+        updateBuffers(keypoints); // 初始化缓冲区
+        return keypoints;
+      }
+      
+      // 遍历所有17个关键点进行平滑处理
+      const smoothedKeypoints = keypoints.map((keypoint, index) => {
+        // 获取当前关键点名称（如 'left_shoulder'）
+        const name = keypoints[index].name;
+        // 获取该关键点对应的缓冲区（存位置、分数）
+        const buffer = keypointBuffers[name];
+        
+        // ==========================================
+        // 核心修改区域：侧身稳定性增强
+        // ==========================================
+        
+        // 如果置信度低于阈值 (默认0.6)，说明电脑看不清这个点
+        if (keypoint.score < MIN_CONFIDENCE) {
+          buffer.missingFrames++; // 记录“看不清”连续发生了多少帧
+          
+          // 【关键修改】将阈值从 3 提升至 15
+          // 以前：只要3帧没看清（约0.1秒）就扔掉点。
+          // 现在：允许连续15帧（约0.5秒）看不清，期间强行显示上一帧位置。
+          // 这对侧身遮挡非常有效，能防止骨架瞬间消失或乱跳。
+          if (buffer.missingFrames > 15) {
+            // 如果真的连续丢失太久了，那就彻底不画这个点了（显示为得分0）
+            return { ...keypoint, score: 0, x: previousKeypoints[index].x, y: previousKeypoints[index].y }; 
+          }
+          
+          // 如果还没超过15帧，执行“位置锁定”策略：
+          // 返回上一帧的位置 和 分数
+          // 这样在侧身时，即使模型检测不准，视觉上骨架也会“定格”在原地，不会乱飞
+          return { 
+            ...previousKeypoints[index], 
+            score: previousKeypoints[index].score * 0.9 // 分数稍微衰减一点，表示这是“预测”值
+          };
+        } else {
+          // 如果这一帧看清楚了（置信度高），重置丢失计数器
+          buffer.missingFrames = 0;
+        }
+        
+        // ==========================================
+        // 正常平滑逻辑（当点能看清时）
+        // ==========================================
+        
+        // 1. 更新缓冲区数据（存入当前位置和分数）
+        buffer.positions.push({ x: keypoint.x, y: keypoint.y });
+        buffer.scores.push(keypoint.score);
+        
+        // 保持缓冲区大小固定（BUFFER_SIZE = 3），移除最老的数据
+        if (buffer.positions.length > BUFFER_SIZE) {
+          buffer.positions.shift();
+          buffer.scores.shift();
+        }
+        
+        // 2. 计算缓冲区里的平均值（简单的抗噪）
+        const avgX = buffer.positions.reduce((sum, p) => sum + p.x, 0) / buffer.positions.length;
+        const avgY = buffer.positions.reduce((sum, p) => sum + p.y, 0) / buffer.positions.length;
+        const avgScore = buffer.scores.reduce((sum, s) => sum + s, 0) / buffer.scores.length;
+        
+        // 3. 使用 EMA (指数移动平均) 进行最终平滑
+        // 公式：新位置 = 旧位置 + (平均位置 - 旧位置) * 平滑系数 (0.7)
+        const prev = previousKeypoints[index];
+        const emaX = prev.x + (avgX - prev.x) * SMOOTHING_FACTOR;
+        const emaY = prev.y + (avgY - prev.y) * SMOOTHING_FACTOR;
+        
+        return {
+          ...keypoint,
+          x: emaX,
+          y: emaY,
+          score: Math.max(keypoint.score, avgScore) // 最终得分取当前和平均的最大值
+        };
+      });
+      
+      // 更新“上一帧”数据，供下一次循环使用
+      previousKeypoints = smoothedKeypoints.map(kp => ({ ...kp }));
+      
+      return smoothedKeypoints;
+    }
+    
+    // 更新所有缓冲区
+    function updateBuffers(keypoints) {
+      keypoints.forEach(kp => {
+        const buffer = keypointBuffers[kp.name];
+        buffer.positions.push({ x: kp.x, y: kp.y });
+        buffer.scores.push(kp.score);
+        if (buffer.positions.length > BUFFER_SIZE) {
+          buffer.positions.shift();
+          buffer.scores.shift();
+        }
+      });
+    }
+    
+    // 预测关键点位置（改进版，使用缓冲区）
+    function predictKeypoint(keypoints, index) {
+      const name = keypoints[index].name;
+      const buffer = keypointBuffers[name];
+      if (buffer.positions.length < 2) {
+        return previousKeypoints[index] || keypoints[index];
+      }
+      
+      const last = buffer.positions[buffer.positions.length - 1];
+      const prev = buffer.positions[buffer.positions.length - 2];
+      
+      const dx = last.x - prev.x;
+      const dy = last.y - prev.y;
+      
+      const avgScore = buffer.scores.reduce((sum, s) => sum + s, 0) / buffer.scores.length;
+      const predictScore = avgScore * 0.6; // 修改：降低预测score，更快低于阈值
+      
+      return {
+        ...keypoints[index],
+        x: last.x + dx * 0.5, // 轻微预测
+        y: last.y + dy * 0.5,
+        score: predictScore
+      };
+    }
+    
+    // 收集手臂数据
+    function collectArmData(keypoints) {
+      if (armMovementData.recording && armMovementData.left.length > 300) {
+        armMovementData.recording = false;
+        statusElem.textContent = '数据已收集完成！';
+        analyzeBtn.textContent = '开始分析动作';
+        analyzeBtn.disabled = false;
+        return;
+      }
+      
+      const leftShoulder = findKeypoint(keypoints, 'left_shoulder');
+      const leftElbow = findKeypoint(keypoints, 'left_elbow');
+      const leftWrist = findKeypoint(keypoints, 'left_wrist');
+      const rightShoulder = findKeypoint(keypoints, 'right_shoulder');
+      const rightElbow = findKeypoint(keypoints, 'right_elbow');
+      const rightWrist = findKeypoint(keypoints, 'right_wrist');
+
+      if (leftShoulder && leftElbow && leftWrist && 
+          rightShoulder && rightElbow && rightWrist) {
+
+        const hasDepthLeft = leftShoulder.depth != null && leftElbow.depth != null && leftWrist.depth != null;
+        const hasDepthRight = rightShoulder.depth != null && rightElbow.depth != null && rightWrist.depth != null;
+
+        const leftAngle = hasDepthLeft
+          ? calculateAngle3D(leftShoulder.x, leftShoulder.y, leftShoulder.depth || 0,
+                             leftElbow.x, leftElbow.y, leftElbow.depth || 0,
+                             leftWrist.x, leftWrist.y, leftWrist.depth || 0)
+          : calculateAngle(leftShoulder.x, leftShoulder.y,
+                           leftElbow.x, leftElbow.y,
+                           leftWrist.x, leftWrist.y);
+
+        const rightAngle = hasDepthRight
+          ? calculateAngle3D(rightShoulder.x, rightShoulder.y, rightShoulder.depth || 0,
+                             rightElbow.x, rightElbow.y, rightElbow.depth || 0,
+                             rightWrist.x, rightWrist.y, rightWrist.depth || 0)
+          : calculateAngle(rightShoulder.x, rightShoulder.y,
+                           rightElbow.x, rightElbow.y,
+                           rightWrist.x, rightWrist.y);
+
+        armMovementData.left.push({
+          angle: leftAngle,
+          shoulderPos: { x: leftShoulder.x, y: leftShoulder.y, z: leftShoulder.depth || 0 },
+          elbowPos: { x: leftElbow.x, y: leftElbow.y, z: leftElbow.depth || 0 },
+          wristPos: { x: leftWrist.x, y: leftWrist.y, z: leftWrist.depth || 0 }
+        });
+
+        armMovementData.right.push({
+          angle: rightAngle,
+          shoulderPos: { x: rightShoulder.x, y: rightShoulder.y, z: rightShoulder.depth || 0 },
+          elbowPos: { x: rightElbow.x, y: rightElbow.y, z: rightElbow.depth || 0 },
+          wristPos: { x: rightWrist.x, y: rightWrist.y, z: rightWrist.depth || 0 }
+        });
+
+        if (armMovementData.left.length >= 10 && armMovementData.right.length >= 10) {
+          armMovementData.hasEnoughData = true;
+          statusElem.textContent = '数据已收集完成，可以点击停止分析';
+        }
+      }
+    }
+    
+    // 计算角度
+    function calculateAngle(x1, y1, x2, y2, x3, y3) {
+      if (isNaN(x1) || isNaN(y1) || isNaN(x2) || isNaN(y2) || isNaN(x3) || isNaN(y3)) {
+        console.warn('角度计算参数无效:', {x1, y1, x2, y2, x3, y3});
+        return 0;
+      }
+      
+      const a = Math.sqrt(Math.pow(x2 - x3, 2) + Math.pow(y2 - y3, 2));
+      const b = Math.sqrt(Math.pow(x1 - x3, 2) + Math.pow(y1 - y3, 2));
+      const c = Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
+      
+      const cosA = (Math.pow(b, 2) + Math.pow(c, 2) - Math.pow(a, 2)) / (2 * b * c);
+      const clampedCosA = Math.max(-1, Math.min(1, cosA));
+      
+      const angle = Math.acos(clampedCosA) * (180 / Math.PI);
+      
+      return angle;
+    }
+    
+    // 3D 角度计算函数
+    function calculateAngle3D(x1, y1, z1, x2, y2, z2, x3, y3, z3) {
+      const v1 = [x1 - x2, y1 - y2, z1 - z2];
+      const v2 = [x3 - x2, y3 - y2, z3 - z2];
+      const dot = v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2];
+      const mag1 = Math.sqrt(v1[0]**2 + v1[1]**2 + v1[2]**2);
+      const mag2 = Math.sqrt(v2[0]**2 + v2[1]**2 + v2[2]**2);
+      if (mag1 === 0 || mag2 === 0) return 0;
+      const cosAngle = dot / (mag1 * mag2);
+      const clamped = Math.max(-1, Math.min(1, cosAngle));
+      return Math.acos(clamped) * (180 / Math.PI);
+    }
+    
+    // 查找特定关键点 (增强版：允许低置信度，用于侧身检测)
+    function findKeypoint(keypoints, name) {
+      const keypoint = keypoints.find(kp => kp.name === name);
+      if (keypoint && keypoint.score > 0) {
+        return keypoint;
+      }
+      return null;
+    }
+    
+    // 绘制骨架（简化版，只绘制骨架，不重绘视频）
+    function drawSkeletonOnVideo(poses, currentCtx, currentDebugCtx, currentCanvas, currentDebugCanvas, currentVideo) {
+      if (!poses || poses.length === 0) return;
+      
+      const videoWidth = currentCanvas.videoWidth || currentVideo.videoWidth;
+      const videoHeight = currentCanvas.videoHeight || currentVideo.videoHeight;
+      const scaleX = currentCanvas.width / videoWidth;
+      const scaleY = currentCanvas.height / videoHeight;
+      currentCanvas.videoRatioX = videoWidth / currentCanvas.width;
+      currentCanvas.videoRatioY = videoHeight / currentCanvas.height;
+      
+      let displayScaleX = currentCanvas.videoRatioX || 1;
+      let displayScaleY = currentCanvas.videoRatioY || 1;
+      
+      if (!currentCanvas.videoRatioX) {
+        displayScaleX = (currentCanvas.videoWidth || currentVideo.videoWidth) / currentCanvas.width;
+        displayScaleY = (currentCanvas.videoHeight || currentVideo.videoHeight) / currentCanvas.height;
+        currentCanvas.videoRatioX = 1 / displayScaleX;
+        currentCanvas.videoRatioY = 1 / displayScaleY;
+      } else {
+        const videoDisplayWidth = currentVideo.clientWidth;
+        const videoDisplayHeight = currentVideo.clientHeight;
+        displayScaleX = currentCanvas.width / videoDisplayWidth;
+        displayScaleY = currentCanvas.height / videoDisplayHeight;
+      }
+      
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      
+      if (debugMode) {
+        currentDebugCtx.fillStyle = 'rgba(0,0,0,0.5)';
+        currentDebugCtx.fillRect(10, currentDebugCanvas.height - 80, 300, 70);
+        currentDebugCtx.fillStyle = 'white';
+        currentDebugCtx.font = '12px Arial';
+        
+        currentDebugCtx.save();
+        currentDebugCtx.scale(-1, 1);
+        currentDebugCtx.translate(-currentDebugCanvas.width, 0);
+        
+        currentDebugCtx.fillText(`设备: ${isMobile ? (isAndroid ? '安卓' : '移动设备') : '桌面浏览器'}`, 15, currentDebugCanvas.height - 65);
+        currentDebugCtx.fillText(`画布: ${currentCanvas.width}x${currentCanvas.height}, 视频: ${currentCanvas.videoWidth || currentVideo.videoWidth}x${currentCanvas.videoHeight || currentVideo.videoHeight}`, 15, currentDebugCanvas.height - 50);
+        currentDebugCtx.fillText(`客户端尺寸: 画布=${currentCanvas.clientWidth}x${currentCanvas.clientHeight}, 视频=${currentVideo.clientWidth}x${currentVideo.clientHeight}`, 15, currentDebugCanvas.height - 35);
+        currentDebugCtx.fillText(`缩放: scaleX=${scaleX.toFixed(2)}, scaleY=${scaleY.toFixed(2)}`, 15, currentDebugCanvas.height - 20);
+        
+        currentDebugCtx.restore();
+      }
+      
+      poses.forEach(pose => {
+        const adjustedKeypoints = correctKeypoints(pose.keypoints, scaleX, scaleY);
+        drawCustomSkeleton(adjustedKeypoints, currentCtx);
+        drawKeypoints(adjustedKeypoints, currentCtx, currentDebugCtx, currentDebugCanvas);
+      });
+    }
+    
+    // 修正关键点坐标
+    function correctKeypoints(keypoints, scaleX, scaleY) {
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      
+      return keypoints.map(keypoint => {
+        const newKeypoint = { ...keypoint };
+        
+        newKeypoint.x = (keypoint.x * scaleX);
+        newKeypoint.y = (keypoint.y * scaleY);
+        
+        const isMirrored = true;
+        if (isMirrored) {
+          newKeypoint.x = canvas.width - newKeypoint.x;
+        }
+        
+        if (isAndroid) {
+          const videoRatioX = canvas.videoRatioX || 1;
+          const videoRatioY = canvas.videoRatioY || 1;
+          newKeypoint.x = keypoint.x / videoRatioX;
+          newKeypoint.y = keypoint.y / videoRatioY;
+          
+          if (Math.abs(1 - videoRatioY) > 0.1) {
+            const potentialYOffset = (canvas.height - (canvas.videoHeight / videoRatioY)) / 2;
+            if (potentialYOffset > 5) {
+              newKeypoint.y -= potentialYOffset;
+            }
+          }
+        } else {
+          newKeypoint.x = keypoint.x * scaleX;
+          newKeypoint.y = keypoint.y * scaleY;
+        }
+        
+        newKeypoint.x = Math.max(0, Math.min(canvas.width, newKeypoint.x));
+        newKeypoint.y = Math.max(0, Math.min(canvas.height, newKeypoint.y));
+        
+        return newKeypoint;
+      });
+    }
+    
+    // 绘制自定义骨架
+    function drawCustomSkeleton(keypoints, currentCtx) {
+      const keypointMap = {};
+      keypoints.forEach(keypoint => {
+        if (keypoint.score > MIN_CONFIDENCE) { // 修改：使用MIN_CONFIDENCE阈值
+          if (keypoint.x >= 0 && keypoint.x <= currentCtx.canvas.width && 
+              keypoint.y >= 0 && keypoint.y <= currentCtx.canvas.height) {
+            keypointMap[keypoint.name] = keypoint;
+          }
+        }
+      });
+      
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const mainLineWidth = isMobile ? 4 : 3;
+      const otherLineWidth = isMobile ? 3 : 2;
+      
+      const leftArmConnections = [
+        ['left_shoulder', 'left_elbow'],
+        ['left_elbow', 'left_wrist']
+      ];
+      
+      const rightArmConnections = [
+        ['right_shoulder', 'right_elbow'],
+        ['right_elbow', 'right_wrist']
+      ];
+      
+      const otherConnections = [
+        ['nose', 'left_eye'], 
+        ['left_eye', 'left_ear'], 
+        ['nose', 'right_eye'],
+        ['right_eye', 'right_ear'],
+        ['left_shoulder', 'right_shoulder'],
+        ['left_shoulder', 'left_hip'],
+        ['right_shoulder', 'right_hip'],
+        ['left_hip', 'right_hip'],
+        ['left_hip', 'left_knee'],
+        ['left_knee', 'left_ankle'],
+        ['right_hip', 'right_knee'],
+        ['right_knee', 'right_ankle']
+      ];
+      
+      currentCtx.lineWidth = mainLineWidth;
+      currentCtx.strokeStyle = '#FF4081';
+      drawConnections(leftArmConnections, keypointMap, currentCtx);
+      
+      currentCtx.strokeStyle = '#2196F3';
+      drawConnections(rightArmConnections, keypointMap, currentCtx);
+      
+      currentCtx.lineWidth = otherLineWidth;
+      currentCtx.strokeStyle = 'cyan';
+      drawConnections(otherConnections, keypointMap, currentCtx);
+    }
+    
+    // 绘制连接线
+    function drawConnections(connections, keypointMap, currentCtx) {
+      currentCtx.lineCap = 'round';
+      currentCtx.lineJoin = 'round';
+      
+      for (const [p1Name, p2Name] of connections) {
+        const p1 = keypointMap[p1Name];
+        const p2 = keypointMap[p2Name];
+        
+        if (p1 && p2 && p1.score > MIN_CONFIDENCE && p2.score > MIN_CONFIDENCE) { // 修改：使用MIN_CONFIDENCE阈值
+          currentCtx.beginPath();
+          currentCtx.moveTo(p1.x, p1.y);
+          currentCtx.lineTo(p2.x, p2.y);
+          currentCtx.stroke();
+        }
+      }
+    }
+    
+    // 绘制关键点
+    function drawKeypoints(keypoints, currentCtx, currentDebugCtx, currentDebugCanvas) {
+      keypoints.forEach(keypoint => {
+        if (keypoint.score > MIN_CONFIDENCE) { // 修改：使用MIN_CONFIDENCE阈值
+          currentCtx.beginPath();
+          currentCtx.arc(keypoint.x, keypoint.y, 5, 0, 2 * Math.PI);
+          currentCtx.fillStyle = 'red';
+          currentCtx.fill();
+        }
+      });
+    }
+    
+    // 更新画布尺寸（修改版）
+    function updateCanvasSize() {
+      // 延迟执行，确保视频元数据加载完成
+      setTimeout(() => {
+        if (video.videoWidth === 0 || video.videoHeight === 0) {
+          setTimeout(updateCanvasSize, 100);
+          return;
+        }
+        
+        // 新增：强制容器保持并排，计算动态宽度
+        const wrapper = document.querySelector('.canvas-wrapper');
+        const containers = document.querySelectorAll('.container, .container2');
+        const availableWidth = wrapper.clientWidth;
+        const minContainerWidth = Math.min(350, availableWidth / 2 - 10);  // 减去gap
+        containers.forEach(container => {
+          container.style.minWidth = `${minContainerWidth}px`;
+          container.style.width = '100%';  // 弹性填充
+        });
+        
+        let videoWidth1 = video.videoWidth;
+        let videoHeight1 = video.videoHeight;
+        const targetRatio = 4 / 3;
+        const currentRatio = videoWidth1 / videoHeight1;
+        if (Math.abs(currentRatio - targetRatio) > 0.1) {
+          videoHeight1 = videoWidth1 / targetRatio;
+        }
+        canvas.videoWidth = videoWidth1;
+        canvas.videoHeight = videoHeight1;
+        canvas.videoRatioX = videoWidth1 / canvas.width;
+        canvas.videoRatioY = videoHeight1 / canvas.height;
+        
+        if (!isVideoMode) {
+          if (video2.videoWidth === 0 || video2.videoHeight === 0) {
+            setTimeout(updateCanvasSize, 100);
+            return;
+          }
+          let videoWidth2 = video2.videoWidth;
+          let videoHeight2 = video2.videoHeight;
+          const currentRatio2 = videoWidth2 / videoHeight2;
+          if (Math.abs(currentRatio2 - targetRatio) > 0.1) {
+            videoHeight2 = videoWidth2 / targetRatio;
+          }
+          canvas2.videoWidth = videoWidth2;
+          canvas2.videoHeight = videoHeight2;
+          canvas2.videoRatioX = videoWidth2 / canvas2.width;
+          canvas2.videoRatioY = videoHeight2 / canvas2.height;
+        }
+        
+        console.log('画布尺寸更新完成，容器最小宽度:', minContainerWidth);
+        
+        previousKeypoints = null;
+        initKeypointBuffers(); // 重置缓冲区
+        
+        if (isDetecting) {
+          setTimeout(() => {
+            requestAnimationFrame(detectPose1);
+            if (!isVideoMode) {
+              requestAnimationFrame(detectPose2);
+            }
+          }, 200);
+        }
+      }, 100);  // 增加延迟，避免reflow
+    }
+    
+    // 切换到摄像头模式
+    async function switchToCamera() {
+      document.getElementById('cameraMode').classList.add('active');
+      document.getElementById('videoMode').classList.remove('active');
+      document.getElementById('uploadArea').classList.add('hidden');
+      document.querySelector('.container2').style.display = 'block';
+      isVideoMode = false;
+      
+      if (uploadedVideo) {
+        uploadedVideo.pause();
+        uploadedVideo = null;
+      }
+      
+      video.srcObject = null;
+      video2.srcObject = null;
+      
+      if (isDetecting) {
+        stopDetection();
+      }
+
+      armMovementData.recording = false;
+      armMovementData.hasEnoughData = false;
+      analyzeBtn.textContent = '开始分析动作';
+      analyzeBtn.disabled = true;
+      
+      startBtn.disabled = false;
+    }
+    
+    // 切换到视频模式
+    function switchToVideo() {
+      document.getElementById('videoMode').classList.add('active');
+      document.getElementById('cameraMode').classList.remove('active');
+      document.getElementById('uploadArea').classList.remove('hidden');
+      document.querySelector('.container2').style.display = 'none';
+      isVideoMode = true;
+      
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+        currentStream = null;
+      }
+      if (currentStream2) {
+        currentStream2.getTracks().forEach(track => track.stop());
+        currentStream2 = null;
+      }
+      
+      if (isDetecting) {
+        stopDetection();
+      }
+
+      armMovementData.recording = false;
+      armMovementData.hasEnoughData = false;
+      analyzeBtn.textContent = '开始分析动作';
+      analyzeBtn.disabled = true;
+      
+      startBtn.disabled = true;
+    }
+    
+    // 处理上传的视频文件
+    function handleVideoFile(file) {
+      if (file.size > 200 * 1024 * 1024) {
+        showSuccessToast('视频文件大小不能超过200MB');
+        return;
+      }
+      
+      const validTypes = ['video/mp4', 'video/quicktime'];
+      if (!validTypes.includes(file.type)) {
+        showSuccessToast('请上传MP4或MOV格式的视频');
+        return;
+      }
+      
+      const videoURL = URL.createObjectURL(file);
+      
+      video.src = videoURL;
+      video.srcObject = null;
+      
+      document.getElementById('uploadArea').classList.add('hidden');
+      
+      startBtn.disabled = false;
+      
+      uploadedVideo = video;
+      
+      statusElem.textContent = `已选择视频: ${file.name}`;
+
+      video.addEventListener('click', function() {
+        if (!isDetecting && isVideoMode) {
+          document.getElementById('uploadArea').classList.remove('hidden');
+          video.src = '';
+          video.srcObject = null;
+          uploadedVideo = null;
+          statusElem.textContent = '请上传新的视频文件';
+        }
+      });
+    }
+
+    // 切换摄像头函数
+    async function switchCamera() {
+      if (isVideoMode) return;
+      
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        
+        if (videoDevices.length <= 1) {
+          showSuccessToast('未找到其他可用的摄像头设备');
+          return;
+        }
+        
+        const dialog = document.createElement('div');
+        dialog.style.position = 'fixed';
+        dialog.style.top = '50%';
+        dialog.style.left = '50%';
+        dialog.style.transform = 'translate(-50%, -50%)';
+        dialog.style.backgroundColor = 'white';
+        dialog.style.padding = '20px';
+        dialog.style.borderRadius = '8px';
+        dialog.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+        dialog.style.zIndex = '1000';
+        dialog.style.width = '80%';
+        dialog.style.maxWidth = '400px';
+        
+        const title = document.createElement('h3');
+        title.textContent = '选择摄像头';
+        title.style.margin = '0 0 15px 0';
+        title.style.fontSize = '18px';
+        title.style.color = '#333';
+        dialog.appendChild(title);
+        
+        const deviceList = document.createElement('div');
+        deviceList.style.maxHeight = '300px';
+        deviceList.style.overflowY = 'auto';
+        deviceList.style.marginBottom = '15px';
+
+        videoDevices.forEach((device, index) => {
+          const deviceItem = document.createElement('div');
+          deviceItem.style.padding = '10px';
+          deviceItem.style.border = '1px solid #eee';
+          deviceItem.style.marginBottom = '5px';
+          deviceItem.style.borderRadius = '4px';
+          deviceItem.style.cursor = 'pointer';
+          deviceItem.style.transition = 'background-color 0.2s';
+          
+          const deviceName = document.createElement('div');
+          let displayName = device.label || `摄像头 ${index + 1}`;
+          deviceName.textContent = displayName;
+          deviceName.style.fontWeight = 'bold';
+          deviceName.style.marginBottom = '5px';
+
+          const deviceId = document.createElement('div');
+          deviceId.textContent = `ID: ${device.deviceId.substring(0, 8)}...`;
+          deviceId.style.fontSize = '12px';
+          deviceId.style.color = '#666';
+          
+          deviceItem.appendChild(deviceName);
+          deviceItem.appendChild(deviceId);
+          
+          deviceItem.addEventListener('click', async () => {
+            try {
+              window.selectedVideoDeviceId = device.deviceId;
+              
+              const wasDetecting = isDetecting;
+              if (wasDetecting) {
+                stopDetection();
+              }
+              
+              await setupCameras();
+              
+              if (wasDetecting) {
+                startDetection();
+              }
+              
+              document.body.removeChild(dialog);
+              document.body.removeChild(overlay);
+              
+              statusElem.textContent = `已切换到: ${device.label || `摄像头 ${index + 1}`}`;
+              
+            } catch (error) {
+              console.error('切换摄像头失败:', error);
+              statusElem.textContent = '切换摄像头失败: ' + error.message;
+            }
+          });
+          
+          deviceItem.addEventListener('mouseover', () => {
+            deviceItem.style.backgroundColor = '#f5f5f5';
+          });
+          
+          deviceItem.addEventListener('mouseout', () => {
+            deviceItem.style.backgroundColor = 'white';
+          });
+          
+          deviceList.appendChild(deviceItem);
+        });
+        
+        dialog.appendChild(deviceList);
+        
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = '取消';
+        cancelBtn.style.padding = '8px 15px';
+        cancelBtn.style.border = 'none';
+        cancelBtn.style.borderRadius = '4px';
+        cancelBtn.style.backgroundColor = '#f5f5f5';
+        cancelBtn.style.cursor = 'pointer';
+        cancelBtn.style.float = 'right';
+        
+        cancelBtn.addEventListener('click', () => {
+          document.body.removeChild(dialog);
+          document.body.removeChild(overlay);
+        });
+        
+        dialog.appendChild(cancelBtn);
+        
+        const overlay = document.createElement('div');
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
+        overlay.style.width = '100%';
+        overlay.style.height = '100%';
+        overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+        overlay.style.zIndex = '999';
+        
+        overlay.addEventListener('click', () => {
+          document.body.removeChild(dialog);
+          document.body.removeChild(overlay);
+        });
+        
+        document.body.appendChild(overlay);
+        document.body.appendChild(dialog);
+        
+      } catch (error) {
+        console.error('获取摄像头列表失败:', error);
+        statusElem.textContent = '获取摄像头列表失败: ' + error.message;
+      }
+    }
+    
+    // 设置摄像头
+    async function setupCameras() {
+      try {
+        if (currentStream) currentStream.getTracks().forEach(track => track.stop());
+        currentStream = await getVideoStream(selectedDeviceId1);
+        video.srcObject = currentStream;
+        
+        if (currentStream2) currentStream2.getTracks().forEach(track => track.stop());
+        currentStream2 = await getVideoStream(selectedDeviceId2);
+        video2.srcObject = currentStream2;
+        
+      } catch (error) {
+        console.error('设置摄像头失败:', error);
+        statusElem.textContent = '设置摄像头失败: ' + error.message;
+        throw error;
+      }
+    }
+    
+    // 获取视频流
+    async function getVideoStream(deviceId) {
+      const constraints = {
+        video: deviceId ? {
+          deviceId: { exact: deviceId },
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+          frameRate: { ideal: 30 }
+        } : true,
+        audio: false
+      };
+      
+      try {
+        return await navigator.mediaDevices.getUserMedia(constraints);
+      } catch (error) {
+        console.warn('精确配置失败，尝试基础配置:', error);
+        const fallbackConstraints = {
+          video: deviceId ? {
+            deviceId: { exact: deviceId }
+          } : true,
+          audio: false
+        };
+        return await navigator.mediaDevices.getUserMedia(fallbackConstraints);
+      }
+    }
+  </script>
+</body>
+</html>
