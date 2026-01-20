@@ -951,79 +951,78 @@
     </div>
     
     <!-- 【修改】综合动作测试结果面板 -->
+    <!-- 【修改】综合动作测试结果面板 - 商业化版本 -->
     <div class="score-section" id="actionTestPanel" style="display: none;">
       <div class="score-header">
         <h3 class="score-title">
-          <span>🏋️</span> 动作测试数据
+          <span>🏋️</span> 专业动作测试
         </h3>
         <button id="closeActionPanel" style="background:none; border:none; color:var(--text-secondary); cursor:pointer; font-size:20px;">×</button>
       </div>
       
-      <!-- 动作按钮网格 -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px;">
+      <!-- 1. 动作选择区域 (替代原来的6个按钮) -->
+      <div style="margin-bottom: 25px; text-align: center;">
+        <label for="actionSelector" style="display:block; margin-bottom:8px; font-weight:500; color:var(--text-primary);">请选择要测试的动作：</label>
+        <select id="actionSelector" style="
+            width: 100%; 
+            max-width: 400px; 
+            padding: 12px 15px; 
+            font-size: 16px; 
+            border: 1px solid var(--border-color); 
+            border-radius: 6px; 
+            background-color: var(--bg-primary); 
+            color: var(--text-primary);
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+        ">
+          <option value="">-- 点击选择动作 --</option>
+          <option value="abduction">🙆 肩外伸 (侧平举)</option>
+          <option value="forward">➡️ 肩前曲 (前平举)</option>
+          <option value="backward">⬅️ 肩后伸 (后伸)</option>
+          <option value="external">🙋 肩外旋</option>
+          <option value="internal">🙎 肩内旋</option>
+          <option value="elbow">💪 肘曲</option>
+        </select>
+      </div>
+
+      <!-- 2. 统一的数据显示面板 (替代原来的分散面板) -->
+      <div id="currentActionDisplay" style="
+          background: var(--bg-secondary); 
+          border: 1px solid var(--border-color); 
+          border-radius: 8px; 
+          padding: 20px; 
+          margin-bottom: 20px; 
+          display: none; /* 默认隐藏，选择动作后显示 */
+          animation: fadeIn 0.3s ease;
+      ">
+        <h4 style="margin: 0 0 15px 0; font-size: 16px; color: var(--primary-color); border-bottom: 1px solid #ddd; padding-bottom: 10px;">
+          <span id="displayActionName">动作名称</span> - 最大角度记录
+        </h4>
         
-        <!-- 动作1：肩外伸 -->
-        <div class="action-item" id="act_abduction">
-          <button class="action-btn" onclick="startAction('abduction')">🙆 肩外伸</button>
-          <div class="action-data" style="display:none;">
-            <div class="data-row"><span>左:</span> <b class="val-left">0°</b> <span class="score-left">(0分)</span></div>
-            <div class="data-row"><span>右:</span> <b class="val-right">0°</b> <span class="score-right">(0分)</span></div>
-            <div class="data-row"><span>对称:</span> <b class="val-sym">0分</b></div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px;">
+          <!-- 左臂数据 -->
+          <div style="background: white; padding: 10px; border-radius: 6px; border-left: 4px solid #2196F3;">
+            <div style="font-size: 12px; color: #666;">左臂角度</div>
+            <div style="font-size: 20px; font-weight: bold; color: #333;"><span id="displayLeftVal">0</span>°</div>
+            <div style="font-size: 12px; color: #2196F3;">得分: <span id="displayLeftScore">0</span></div>
           </div>
-        </div>
-
-        <!-- 动作2：肩前曲 -->
-        <div class="action-item" id="act_forward">
-          <button class="action-btn" onclick="startAction('forward')">➡️ 肩前曲</button>
-          <div class="action-data" style="display:none;">
-            <div class="data-row"><span>左:</span> <b class="val-left">0°</b> <span class="score-left">(0分)</span></div>
-            <div class="data-row"><span>右:</span> <b class="val-right">0°</b> <span class="score-right">(0分)</span></div>
-            <div class="data-row"><span>对称:</span> <b class="val-sym">0分</b></div>
+          
+          <!-- 右臂数据 -->
+          <div style="background: white; padding: 10px; border-radius: 6px; border-left: 4px solid #FF4081;">
+            <div style="font-size: 12px; color: #666;">右臂角度</div>
+            <div style="font-size: 20px; font-weight: bold; color: #333;"><span id="displayRightVal">0</span>°</div>
+            <div style="font-size: 12px; color: #FF4081;">得分: <span id="displayRightScore">0</span></div>
           </div>
-        </div>
-
-        <!-- 动作3：肩后伸 -->
-        <div class="action-item" id="act_backward">
-          <button class="action-btn" onclick="startAction('backward')">⬅️ 肩后伸</button>
-          <div class="action-data" style="display:none;">
-            <div class="data-row"><span>左:</span> <b class="val-left">0°</b> <span class="score-left">(0分)</span></div>
-            <div class="data-row"><span>右:</span> <b class="val-right">0°</b> <span class="score-right">(0分)</span></div>
-            <div class="data-row"><span>对称:</span> <b class="val-sym">0分</b></div>
-          </div>
-        </div>
-
-        <!-- 动作4：肩外旋 -->
-        <div class="action-item" id="act_external">
-          <button class="action-btn" onclick="startAction('external')">🙋 肩外旋</button>
-          <div class="action-data" style="display:none;">
-            <div class="data-row"><span>左:</span> <b class="val-left">0°</b> <span class="score-left">(0分)</span></div>
-            <div class="data-row"><span>右:</span> <b class="val-right">0°</b> <span class="score-right">(0分)</span></div>
-            <div class="data-row"><span>对称:</span> <b class="val-sym">0分</b></div>
-          </div>
-        </div>
-		
-        <!-- 动作5：肩内旋 -->
-        <div class="action-item" id="act_internal">
-          <button class="action-btn" onclick="startAction('internal')">🙎 肩内旋</button>
-          <div class="action-data" style="display:none;">
-            <div class="data-row"><span>左:</span> <b class="val-left">0°</b> <span class="score-left">(0分)</span></div>
-            <div class="data-row"><span>右:</span> <b class="val-right">0°</b> <span class="score-right">(0分)</span></div>
-            <div class="data-row"><span>对称:</span> <b class="val-sym">0分</b></div>
-          </div>
-        </div>
-
-        <!-- 动作6：肘曲 -->
-        <div class="action-item" id="act_elbow">
-          <button class="action-btn" onclick="startAction('elbow')">💪 肘曲</button>
-          <div class="action-data" style="display:none;">
-            <div class="data-row"><span>左:</span> <b class="val-left">0°</b> <span class="score-left">(0分)</span></div>
-            <div class="data-row"><span>右:</span> <b class="val-right">0°</b> <span class="score-right">(0分)</span></div>
-            <div class="data-row"><span>对称:</span> <b class="val-sym">0分</b></div>
+          
+          <!-- 对称度 -->
+          <div style="background: white; padding: 10px; border-radius: 6px; border-left: 4px solid #4CAF50;">
+            <div style="font-size: 12px; color: #666;">对称度</div>
+            <div style="font-size: 20px; font-weight: bold; color: #333;"><span id="displaySymVal">0</span>分</div>
           </div>
         </div>
       </div>
 
-      <!-- 综合总分 -->
+      <!-- 3. 综合总分 (保持不变) -->
       <div style="border-top: 1px solid var(--border-color); padding-top: 15px; margin-top: 10px;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <span style="font-weight:bold; font-size:16px;">🏆 综合康复评分</span>
@@ -1036,28 +1035,30 @@
           (需完成所有动作以计算总分)
         </div>
       </div>
-	  
-      <!-- Excel 保存按钮区域 -->
+      
+      <!-- Excel 保存按钮区域 (保持不变) -->
       <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #d1d5db;">
         <div style="display: flex; gap: 10px; justify-content: center; align-items: center;">
-          
-          <!-- 按钮1：设置路径 -->
           <button id="setPathBtn" class="analyze-btn" style="flex: 1; min-width: 140px; background-color: #64748b; border-color: #64748b;">
             <span>📁</span> <span id="pathBtnText">设置保存路径</span>
           </button>
-          
-          <!-- 按钮2：保存 -->
           <button id="saveReportBtn" class="start-btn" style="flex: 1; min-width: 140px;" disabled>
             <span>📥</span> 保存到 Excel
           </button>
         </div>
-        
-        <!-- 提示文字 -->
         <div id="pathStatus" style="font-size: 12px; color: #6b7280; margin-top: 8px; text-align: center;">
           当前模式：直接下载 (默认保存到下载文件夹)
         </div>
       </div>
     </div>
+    
+    <!-- 添加简单的淡入动画样式 -->
+    <style>
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(5px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+    </style>
 
     <!--实时角度提示条 -->
     <div id="liveAngleToast" style="position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:white; padding:10px 20px; border-radius:20px; display:none; z-index:2000; font-size:16px; font-weight:bold;">
@@ -1140,6 +1141,10 @@
     let noPoseFrames2 = 0;         // 新增：无姿势帧计数器（画布2）
     const RESET_THRESHOLD = 5;    // 修改：降低阈值，更快重置
     
+	// 新增虚拟锚点
+    let anchorShoulder = { x: 0, y: 0, valid: false };
+    let anchorHip = { x: 0, y: 0, valid: false };
+	
     // 手臂动作分析数据
     let armMovementData = {
       left: [],
@@ -1381,6 +1386,7 @@
     }
 
     // 2. 开始某个具体动作
+    // 2. 开始某个具体动作 (修改版：适配下拉菜单)
     window.startAction = function(type) {
       if (!isActionTestMode) return;
       
@@ -1396,15 +1402,14 @@
       // 开始新动作
       currentActionType = type;
       
-      // 更新UI按钮状态
-      document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('active'));
-      const btn = document.querySelector(`#act_${type} .action-btn`);
-      if(btn) btn.classList.add('active');
-      
-      // 显示该动作的数据面板
-      document.querySelectorAll('.action-data').forEach(d => d.style.display = 'none');
-      const dataPanel = document.querySelector(`#act_${type} .action-data`);
-      if(dataPanel) dataPanel.style.display = 'block';
+      // --- 【新增】更新下拉菜单和UI ---
+      document.getElementById('actionSelector').value = type;
+      const selectEl = document.getElementById('actionSelector');
+      const selectedOption = selectEl.options[selectEl.selectedIndex];
+      const cleanName = selectedOption ? selectedOption.text.split(' ')[1] || selectedOption.text : type;
+      document.getElementById('displayActionName').textContent = cleanName;
+      document.getElementById('currentActionDisplay').style.display = 'block';
+      // --------------------------------
       
       // 显示实时角度提示
       const toast = document.getElementById('liveAngleToast');
@@ -1423,7 +1428,7 @@
       showSuccessToast(`开始测试：${msg}`);
     };
 
-    // 3. 停止当前动作
+    // 3. 停止当前动作 (修改版：重置下拉菜单)
     function stopCurrentAction() {
       if (!currentActionType) return;
       
@@ -1431,14 +1436,15 @@
       saveActionData(currentActionType);
       
       // 重置UI
-      const btn = document.querySelector(`#act_${currentActionType} .action-btn`);
-      if(btn) {
-        btn.classList.remove('active');
-        btn.classList.add('has-data'); // 标记已有数据
-      }
+      // 原有的按钮逻辑不再需要
       
       currentActionType = null;
       document.getElementById('liveAngleToast').style.display = 'none';
+      
+      // --- 【新增】重置下拉菜单和UI ---
+      document.getElementById('actionSelector').value = "";
+      document.getElementById('currentActionDisplay').style.display = 'none';
+      // --------------------------------
       
       // 重新计算总分
       calculateTotalScore();
@@ -1550,35 +1556,66 @@
         if(angleR > actionData.abduction.right) actionData.abduction.right = angleR;
       } 
       
-      // --- 动作 2：肩前曲 (改回侧身模式 + 区分左右臂) ---
-        else if (type === 'forward') {
-            // 1. 智能识别当前是在测试左臂还是右臂
-            const arm = getBestVisibleArm(ls, le, lw, rs, re, rw, lhip, rhip);
-             if (arm) {
-               // 如果是左侧手 (shoulder name 包含 'left')
-               if (arm.shoulder.name.includes('left')) {
-                 angleL = 180 - calculateAngle(lhip.x, lhip.y, ls.x, ls.y, le.x, le.y);
-                 angleR = 0; // 右臂不参与测试，强制为0
-                 displayText = `左臂: ${Math.round(angleL)}° (右臂未检测)`;
-                 
-                 // 存入数据
-                 if(angleL > actionData.forward.left) actionData.forward.left = angleL;
-                 // 保持 right臂为0或上一次的有效值？
-                 // 这里我们选择让未检测的手臂保持显示为0或不更新最大值
-                 if (actionData.forward.right === 0) actionData.forward.right = 0; 
-               
-               } 
-               // 如果是右侧手
-               else if (arm.shoulder.name.includes('right')) {
-                 angleR = 180 - calculateAngle(rhip.x, rhip.y, rs.x, rs.y, re.x, re.y);
-                 angleL = 0;
-                 displayText = `右臂: ${Math.round(angleR)}° (左臂未检测)`;
-                 
-                 if(angleR > actionData.forward.right) actionData.forward.right = angleR;
-                 if (actionData.forward.left === 0) actionData.forward.left = 0;
-               }
-             }
-           }
+      // --- 动作 2：肩前曲 (增强版：支持正侧面遮挡检测) ---
+      else if (type === 'forward') {
+        
+        // 【新增逻辑 1：自动校准锚点】
+        // 如果当前肩膀和髋部都看得很清楚（置信度高），说明没被遮挡
+        // 这时候更新我们的“记忆位置”，确保它是准确的
+        if (ls && ls.score > 0.5 && lhip && lhip.score > 0.5) {
+            anchorShoulder = { x: ls.x, y: ls.y, valid: true };
+            anchorHip = { x: lhip.x, y: lhip.y, valid: true };
+        }
+        if (rs && rs.score > 0.5 && rhip && rhip.score > 0.5) {
+            anchorShoulder = { x: rs.x, y: rs.y, valid: true };
+            anchorHip = { x: rhip.x, y: rhip.y, valid: true };
+        }
+
+        const arm = getBestVisibleArm(ls, le, lw, rs, re, rw, lhip, rhip);
+        
+        if (arm) {
+          // 准备计算用的坐标
+          let sX, sY, hX, hY; // 肩膀坐标，髋部坐标
+          
+          // 【新增逻辑 2：使用锚点】
+          // 如果检测到的肩膀置信度低（被挡住了），且有记忆的锚点，就用锚点
+          if (arm.shoulder && arm.shoulder.score < 0.3 && anchorShoulder.valid) {
+              sX = anchorShoulder.x;
+              sY = anchorShoulder.y;
+              hX = anchorHip.x;    // 髋部也用记忆的
+              hY = anchorHip.y;
+          } else {
+              // 否则用实时检测到的
+              sX = arm.shoulder.x;
+              sY = arm.shoulder.y;
+              hX = arm.hip.x;
+              hY = arm.hip.y;
+          }
+
+          // 左臂
+          if (arm.shoulder.name.includes('left')) {
+             // 使用刚才准备好的坐标 进行计算
+             angleL = calculateAngle(sX, sY, le.x, le.y, hX, hY);
+             
+             if(angleL > actionData.forward.left) actionData.forward.left = angleL;
+             angleR = 0;
+             displayText = `左臂: ${Math.round(angleL)}° (右臂未检测)`;
+             
+             if (actionData.forward.right === 0) actionData.forward.right = 0;
+          } 
+          // 右臂
+          else if (arm.shoulder.name.includes('right')) {
+             // 使用刚才准备好的坐标 进行计算
+             angleR = calculateAngle(sX, sY, re.x, re.y, hX, hY);
+             
+             if(angleR > actionData.forward.right) actionData.forward.right = angleR;
+             angleL = 0;
+             displayText = `右臂: ${Math.round(angleR)}° (左臂未检测)`;
+             
+             if (actionData.forward.left === 0) actionData.forward.left = 0;
+          }
+        }
+      }
            
           // --- 动作 3：肩后伸 (改回侧身模式 + 区分左右臂) ---
           else if (type === 'backward') {
@@ -1666,6 +1703,10 @@
         
         if(angleL > actionData.elbow.left) actionData.elbow.left = angleL;
         if(angleR > actionData.elbow.right) actionData.elbow.right = angleR;
+		
+        // 【新增】确保肘曲数据被标记为已完成，以便保存
+        if (angleL > 0) actionData.elbow.left = angleL;
+        if (angleR > 0) actionData.elbow.right = angleR;
       }
 
       // --- 更新UI显示 ---
@@ -1723,52 +1764,44 @@
       return null;
     }
 
-    // 实时更新面板上的数值
-    function updateActionPanelUI(type, val1, val2) {
-      // 更新最大值存储（在 updateActionSystem 中已做，这里只做显示）
-      // 根据不同类型更新DOM
-      if (type === 'abduction') {
-        const d = actionData.abduction;
-        const sym = d.left > 0 ? (Math.min(d.left, d.right) / Math.max(d.left, d.right) * 100) : 0;
-        d.sym = Math.round(sym);
-        
-        updateVal('#act_abduction .val-left', d.left);
-        updateVal('#act_abduction .val-right', d.right);
-        updateScore('#act_abduction .score-left', d.left, 180);
-        updateScore('#act_abduction .score-right', d.right, 180);
-        updateScore('#act_abduction .val-sym', d.sym, 100, false);
-      }
-      else if (type === 'elbow') {
-        const d = actionData.elbow;
-        const sym = d.left > 0 ? (Math.min(d.left, d.right) / Math.max(d.left, d.right) * 100) : 0;
-        d.sym = Math.round(sym);
-        
-        updateVal('#act_elbow .val-left', d.left);
-        updateVal('#act_elbow .val-right', d.right);
-        updateScore('#act_elbow .score-left', d.left, 180);
-        updateScore('#act_elbow .score-right', d.right, 180);
-        updateScore('#act_elbow .val-sym', d.sym, 100, false);
-      }
-      else {
-        const d = actionData[type];
-        
-        // 计算对称度
-        const sym = (d.left > 0 && d.right > 0) ? (Math.min(d.left, d.right) / Math.max(d.left, d.right) * 100) : 0;
-        d.sym = Math.round(sym);
-        
-        // 更新左臂
-        updateVal(`#act_${type} .val-left`, d.left);
-        updateScore(`#act_${type} .score-left`, d.left, d.norm);
-        
-        // 更新右臂
-        updateVal(`#act_${type} .val-right`, d.right);
-        updateScore(`#act_${type} .score-right`, d.right, d.norm);
-        
-        // 更新对称度
-        updateScore(`#act_${type} .val-sym`, d.sym, 100, false);
-      }
-    }
-
+     // 实时更新面板上的数值 (修正版：显示最大值和得分)
+     function updateActionPanelUI(type, val1, val2) {
+       // 1. 获取该动作的历史数据对象
+       const d = actionData[type];
+       const norm = d.norm;
+       
+       // 2. 获取最大角度 (这些值在 updateActionSystem 中已经实时更新了)
+       const maxLeft = d.left;
+       const maxRight = d.right;
+       
+       // 3. 计算对称度 (基于最大值)
+       // 逻辑：如果两边都有数据，取较小值/较大值；否则为0
+       let sym = 0;
+       if (maxLeft > 0 && maxRight > 0) {
+         sym = (Math.min(maxLeft, maxRight) / Math.max(maxLeft, maxRight)) * 100;
+       }
+       d.sym = Math.round(sym); // 更新回数据对象
+ 
+       // 4. 更新 UI 显示 (适配新的统一面板)
+       // 只有当当前正在测试的动作类型与UI一致时才更新
+       if (currentActionType === type) {
+         const displayPanel = document.getElementById('currentActionDisplay');
+         if (displayPanel) {
+           // 更新显示面板的数值 (显示最大角度)
+           document.getElementById('displayLeftVal').textContent = Math.round(maxLeft);
+           document.getElementById('displayRightVal').textContent = Math.round(maxRight);
+           document.getElementById('displaySymVal').textContent = d.sym;
+           
+           // 计算并显示分数 (分数 = 最大角度 / 标准值 * 100)
+           const leftScore = Math.round((maxLeft / norm) * 100);
+           const rightScore = Math.round((maxRight / norm) * 100);
+           
+           document.getElementById('displayLeftScore').textContent = leftScore;
+           document.getElementById('displayRightScore').textContent = rightScore;
+         }
+       }
+     }
+	 
     function updateVal(selector, val) {
       const el = document.querySelector(selector);
       if(el) el.textContent = Math.round(val) + '°';
@@ -1783,6 +1816,60 @@
     }
 
     // 初始化事件绑定
+	
+	// 下拉菜单控制 
+    const actionSelector = document.getElementById('actionSelector');
+    
+    actionSelector.addEventListener('change', function(e) {
+      const selectedAction = e.target.value;
+      
+      if (selectedAction) {
+        // 如果用户选择了动作，调用开始动作函数
+        // 为了兼容原有的 startAction 逻辑，我们需要模拟点击或直接调用
+        startAction(selectedAction);
+        
+        // 更新面板标题
+        const optionText = e.target.options[e.target.selectedIndex].text;
+        // 提取emoji后面的文字作为标题
+        const cleanName = optionText.split(' ')[1] || optionText;
+        document.getElementById('displayActionName').textContent = cleanName;
+        
+        // 显示数据面板
+        document.getElementById('currentActionDisplay').style.display = 'block';
+      } else {
+        // 如果用户选择了默认项（空），则停止当前动作
+        stopCurrentAction();
+        document.getElementById('currentActionDisplay').style.display = 'none';
+      }
+    });
+    
+    // 修改 stopCurrentAction 函数，增加重置下拉菜单的逻辑
+    // 找到原有的 stopCurrentAction 函数并在末尾添加以下代码：
+    const originalStopCurrentAction = stopCurrentAction; // 备份原函数（如果需要）
+    
+    // 我们直接重写 stopCurrentAction 的部分行为，或者在其调用后手动重置UI
+    //为了简单起见，请在 stopCurrentAction 函数内部（最后一行之前）添加：
+    // actionSelector.value = ""; 
+    // 但由于 stopCurrentAction 在 startAction 内部也会被调用，
+    // 我们最好在 startAction 切换时处理 UI。
+    
+    // 让我们微调一下 startAction 函数中的 UI 更新部分：
+    // 找到 window.startAction = function(type) { ... }
+    // 在函数内部找到更新 UI 的部分，替换为：
+    /*
+      // 更新下拉菜单状态
+      document.getElementById('actionSelector').value = type;
+      
+      // 更新面板标题
+      const selectEl = document.getElementById('actionSelector');
+      const selectedOption = selectEl.options[selectEl.selectedIndex];
+      const cleanName = selectedOption ? selectedOption.text.split(' ')[1] || selectedOption.text : type;
+      document.getElementById('displayActionName').textContent = cleanName;
+      
+      // 显示数据面板
+      document.getElementById('currentActionDisplay').style.display = 'block';
+    */
+	
     document.getElementById('actionTestBtn').addEventListener('click', toggleActionTestPanel);
     document.getElementById('closeActionPanel').addEventListener('click', toggleActionTestPanel);
     // 绑定 Excel 按钮功能
@@ -2647,9 +2734,9 @@
         "肩内旋-右(°)": actionData.internal.done ? Math.round(actionData.internal.right) : '',
         "肩内旋-对称分": actionData.internal.done ? actionData.internal.sym : '',
         
-        "肘曲-左(°)": actionData.elbow.done ? Math.round(actionData.elbow.left) : '',
-        "肘曲-右(°)": actionData.elbow.done ? Math.round(actionData.elbow.right) : '',
-        "肘曲-对称分": actionData.elbow.done ? actionData.elbow.sym : ''
+		"肘曲-左(°)": (actionData.elbow.left > 0) ? Math.round(actionData.elbow.left) : '',
+        "肘曲-右(°)": (actionData.elbow.right > 0) ? Math.round(actionData.elbow.right) : '',
+        "肘曲-对称分": (actionData.elbow.left > 0 || actionData.elbow.right > 0) ? actionData.elbow.sym : ''
       };
 
       const btn = document.getElementById('saveReportBtn');
@@ -2879,17 +2966,10 @@
           buffer.missingFrames++; // 记录“看不清”连续发生了多少帧
           
           // 【关键修改】将阈值从 3 提升至 15
-          // 以前：只要3帧没看清（约0.1秒）就扔掉点。
-          // 现在：允许连续15帧（约0.5秒）看不清，期间强行显示上一帧位置。
-          // 这对侧身遮挡非常有效，能防止骨架瞬间消失或乱跳。
           if (buffer.missingFrames > 15) {
             // 如果真的连续丢失太久了，那就彻底不画这个点了（显示为得分0）
             return { ...keypoint, score: 0, x: previousKeypoints[index].x, y: previousKeypoints[index].y }; 
           }
-          
-          // 如果还没超过15帧，执行“位置锁定”策略：
-          // 返回上一帧的位置 和 分数
-          // 这样在侧身时，即使模型检测不准，视觉上骨架也会“定格”在原地，不会乱飞
           return { 
             ...previousKeypoints[index], 
             score: previousKeypoints[index].score * 0.9 // 分数稍微衰减一点，表示这是“预测”值
