@@ -1842,33 +1842,9 @@
         document.getElementById('currentActionDisplay').style.display = 'none';
       }
     });
+    const originalStopCurrentAction = stopCurrentAction; 
     
-    // 修改 stopCurrentAction 函数，增加重置下拉菜单的逻辑
-    // 找到原有的 stopCurrentAction 函数并在末尾添加以下代码：
-    const originalStopCurrentAction = stopCurrentAction; // 备份原函数（如果需要）
-    
-    // 我们直接重写 stopCurrentAction 的部分行为，或者在其调用后手动重置UI
-    //为了简单起见，请在 stopCurrentAction 函数内部（最后一行之前）添加：
-    // actionSelector.value = ""; 
-    // 但由于 stopCurrentAction 在 startAction 内部也会被调用，
-    // 我们最好在 startAction 切换时处理 UI。
-    
-    // 让我们微调一下 startAction 函数中的 UI 更新部分：
-    // 找到 window.startAction = function(type) { ... }
-    // 在函数内部找到更新 UI 的部分，替换为：
-    /*
-      // 更新下拉菜单状态
-      document.getElementById('actionSelector').value = type;
-      
-      // 更新面板标题
-      const selectEl = document.getElementById('actionSelector');
-      const selectedOption = selectEl.options[selectEl.selectedIndex];
-      const cleanName = selectedOption ? selectedOption.text.split(' ')[1] || selectedOption.text : type;
-      document.getElementById('displayActionName').textContent = cleanName;
-      
-      // 显示数据面板
-      document.getElementById('currentActionDisplay').style.display = 'block';
-    */
+
 	
     document.getElementById('actionTestBtn').addEventListener('click', toggleActionTestPanel);
     document.getElementById('closeActionPanel').addEventListener('click', toggleActionTestPanel);
