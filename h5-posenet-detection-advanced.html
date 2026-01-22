@@ -1617,28 +1617,63 @@
            
       // --- 动作 3：肩后伸 (改回侧身模式 + 区分左右臂) ---
       else if (type === 'backward') {
-         // 1. 智能识别当前是在测试左臂还是右臂
-         const arm = getBestVisibleArm(ls, le, lw, rs, re, rw, lhip, rhip);
-         
-         if (arm && arm.shoulder && arm.elbow && arm.hip) {
-           // 计算肩部角度 (髋-肩-肘)
-           // 【修改】这里将参数顺序改为：髋 -> 肩 -> 肘
-           const angle = calculateAngle(arm.hip.x, arm.hip.y, arm.shoulder.x, arm.shoulder.y, arm.elbow.x, arm.elbow.y);
-           
-           if (arm.shoulder.name.includes('left')) {
-             angleL = angle;
+        
+        // 【新增逻辑 1：自动校准锚点】
+        // 如果当前肩膀和髋部都看得很清楚（置信度高），说明没被遮挡
+        // 这时候更新我们的“记忆位置”，确保它是准确的
+        if (ls && ls.score > 0.5 && lhip && lhip.score > 0.5) {
+            anchorShoulder = { x: ls.x, y: ls.y, valid: true };
+            anchorHip = { x: lhip.x, y: lhip.y, valid: true };
+        }
+        if (rs && rs.score > 0.5 && rhip && rhip.score > 0.5) {
+            anchorShoulder = { x: rs.x, y: rs.y, valid: true };
+            anchorHip = { x: rhip.x, y: rhip.y, valid: true };
+        }
+
+        const arm = getBestVisibleArm(ls, le, lw, rs, re, rw, lhip, rhip);
+        
+        if (arm) {
+          // 准备计算用的坐标
+          let sX, sY, hX, hY; // 肩膀坐标，髋部坐标
+          
+          // 【新增逻辑 2：使用锚点】
+          // 如果检测到的肩膀置信度低（被挡住了），且有记忆的锚点，就用锚点
+          if (arm.shoulder && arm.shoulder.score < 0.3 && anchorShoulder.valid) {
+              sX = anchorShoulder.x;
+              sY = anchorShoulder.y;
+              hX = anchorHip.x;    // 髋部也用记忆的
+              hY = anchorHip.y;
+          } else {
+              // 否则用实时检测到的
+              sX = arm.shoulder.x;
+              sY = arm.shoulder.y;
+              hX = arm.hip.x;
+              hY = arm.hip.y;
+          }
+
+          // 左臂
+          if (arm.shoulder.name.includes('left')) {
+             // 使用刚才准备好的坐标 进行计算
+             angleL = calculateAngle(sX, sY, le.x, le.y, hX, hY);
+             
+             if(angleL > actionData.backward.left) actionData.backward.left = angleL;
              angleR = 0;
-             displayText = `左臂: ${Math.round(angle)}° (右臂未检测)`;
-             if(angle > actionData.backward.left) actionData.backward.left = angle;
+             displayText = `左臂: ${Math.round(angleL)}° (右臂未检测)`;
+             
              if (actionData.backward.right === 0) actionData.backward.right = 0;
-           } else {
-             angleR = angle;
+          } 
+          // 右臂
+          else if (arm.shoulder.name.includes('right')) {
+             // 使用刚才准备好的坐标 进行计算
+             angleR = calculateAngle(sX, sY, re.x, re.y, hX, hY);
+             
+             if(angleR > actionData.backward.right) actionData.backward.right = angleR;
              angleL = 0;
-             displayText = `右臂: ${Math.round(angle)}° (左臂未检测)`;
-             if(angle > actionData.backward.right) actionData.backward.right = angle;
+             displayText = `右臂: ${Math.round(angleR)}° (左臂未检测)`;
+             
              if (actionData.backward.left === 0) actionData.backward.left = 0;
-           }
-         }
+          }
+        }
        }
       
       // --- 动作 4：肩外旋 (改为正对双臂模式) ---
@@ -1671,7 +1706,7 @@
         }
         if (re && rw) {
           const rawAngle = getAngleFromHorizontal(re.x, re.y, rw.x, rw.y);
-          angleR = 180 - Math.abs(rawAngle) - 90 + 15;
+          angleR = 180 - Math.abs(rawAngle) - 90 + 15 + 80;
         }
         displayText = `左: ${Math.round(angleL)}° | 右: ${Math.round(angleR)}°`;
         
@@ -1685,27 +1720,39 @@
         if (ls && le && lw) {
           const rawL = calculateAngle(ls.x, ls.y, le.x, le.y, lw.x, lw.y);
           if (rawL > 175) {
-            rawL = 180;
+            // rawL = 180; // 这行注释掉或保留不影响，因为下面用不到rawL了
           }
           
+          // 【关键修改1】直接计算并赋值给 actionData.elbow.left，确保数据同步
           angleL = 180 - rawL - 45;
+          
+          // 【关键修改2】确保保存到全局变量，而不是局部变量
+          if (angleL > actionData.elbow.left) {
+            actionData.elbow.left = angleL;
+          }
         }
+        
         if (rs && re && rw) {
           const rawR = calculateAngle(rs.x, rs.y, re.x, re.y, rw.x, rw.y);
           if (rawR > 175) {
-            rawR = 180;
+            // rawR = 180;
           }
           
+          // 【关键修改1】直接计算并赋值给 actionData.elbow.right
           angleR = 180 - rawR - 45;
+          
+          // 【关键修改2】确保保存到全局变量
+          if (angleR > actionData.elbow.right) {
+            actionData.elbow.right = angleR;
+          }
         }
+
         displayText = `左: ${Math.round(angleL)}° | 右: ${Math.round(angleR)}°`;
         
-        if(angleL > actionData.elbow.left) actionData.elbow.left = angleL;
-        if(angleR > actionData.elbow.right) actionData.elbow.right = angleR;
-		
-        // 【新增】确保肘曲数据被标记为已完成，以便保存
-        if (angleL > 0) actionData.elbow.left = angleL;
-        if (angleR > 0) actionData.elbow.right = angleR;
+        // 【删除原有代码】
+        // 删除下面这两行，因为上面的逻辑已经包含了保存功能，且上面的逻辑更准确
+        // if (angleL > 0) actionData.elbow.left = angleL;
+        // if (angleR > 0) actionData.elbow.right = angleR;
       }
 
       // --- 更新UI显示 ---
@@ -2685,11 +2732,11 @@
         
         "肩内旋-左(°)": actionData.internal.done ? Math.round(actionData.internal.left) : '',
         "肩内旋-右(°)": actionData.internal.done ? Math.round(actionData.internal.right) : '',
-        "肩内旋-对称分": actionData.internal.done ? actionData.internal.sym : '',
+        "肩内旋-对称分": actionData.internal.done ? actionData.interna2l.sym : '',
         
-        "肘曲-左(°)": actionData.elbow.done ? Math.round(actionData.elbow.left) : '',
-        "肘曲-右(°)": actionData.elbow.done ? Math.round(actionData.elbow.right) : '',
-        "肘曲-对称分": actionData.elbow.done ? actionData.elbow.sym : ''
+        "肘曲-左(°)": Math.round(actionData.elbow.left),
+        "肘曲-右(°)": Math.round(actionData.elbow.right),
+        "肘曲-对称分": actionData.elbow.sym
       };
 
       const btn = document.getElementById('saveReportBtn');
